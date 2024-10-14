@@ -1,9 +1,10 @@
 import express from 'express';
+import 'reflect-metadata';
 import cors from 'cors';
 import { startupLogger } from './utils/logger';
 import { Request, Response, NextFunction } from 'express';
-import requestLogger from './middlewares/requestLoger';
-import { router as apiRoutes } from './routes/index';
+import requestLogger from './middlewares/request-loger.middleware';
+import { router as apiRoutes } from './routes/index.route';
 
 class UsofServer {
   private app: express.Application;

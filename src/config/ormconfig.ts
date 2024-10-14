@@ -1,15 +1,15 @@
 import { DataSource } from 'typeorm';
 import config from './config';
 
-export default new DataSource({
+export const AppDataSource = new DataSource({
   type: 'mysql',
   host: config.host,
   port: Number(config.port),
   username: config.database.user,
   password: config.database.pass,
   database: config.database.name,
-  entities: ['src/entity/**/*.ts'],
+  entities: ['src/entities/*.ts'],
   migrations: ['src/migration/*.ts'],
-  synchronize: false,
+  synchronize: true,
   logging: true,
 });
