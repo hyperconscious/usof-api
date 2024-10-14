@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+      "target": "ES6",
+      "removeComments": true,
+      "module": "CommonJS",
+      "outDir": "./dist",
+      "rootDir": "./src",
+      "esModuleInterop": true,
+      "strict": true,
+      "allowJs": false,
+      "moduleResolution": "node",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+    },
+    "include": ["./**/*.ts"],
+    "exclude": ["node_modules/**/*"]
+  }

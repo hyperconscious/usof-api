@@ -1,0 +1,43 @@
+services:
+  mysqldb:
+    container_name: mysqldb
+    image: mysql:8.0
+    env_file: .env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASS}
+      - MYSQL_DATABASE=${DB_NAME}
+    ports:
+      - "${MYSQLDB_LOCAL_PORT}:${MYSQLDB_DOCKER_PORT}"
+    volumes:
+      - usof_volume:/var/lib/mysql
+    networks:
+      - usof_network
+
+  usof:
+    container_name: usof
+    depends_on:
+      - mysqldb
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm start" 
+  # npm run migration:run
+    image: usof
+    env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "${NODE_LOCAL_PORT}:${NODE_DOCKER_PORT}"
+    volumes:
+      - .:/usr/src/app
+    networks:
+      - usof_network
+
+networks:
+  usof_network:
+    driver: bridge
+
+volumes:
+  usof_volume:
+    driver: local
