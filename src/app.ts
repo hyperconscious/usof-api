@@ -4,7 +4,9 @@ import cors from 'cors';
 import { startupLogger } from './utils/logger';
 import { Request, Response, NextFunction } from 'express';
 import requestLogger from './middlewares/request-loger.middleware';
-import { router as apiRoutes } from './routes/index.route';
+import { router as apiRoutes } from './routes/index.routes';
+import { AppDataSource } from './config/ormconfig';
+import { databaseService } from './services/database.service';
 
 class UsofServer {
   private app: express.Application;
@@ -24,6 +26,17 @@ class UsofServer {
     this.app.use(requestLogger);
   }
 
+  private async initializeDatabase(): Promise<void> {
+    try {
+      await AppDataSource.initialize();
+      startupLogger.info('Database connection established successfully');
+    } catch (error) {
+      startupLogger.error('Failed to initialize database connection');
+      startupLogger.error(`Error details: ${error}`);
+      throw new Error('Database connection failed');
+    }
+  }
+
   private configureRoutes(): void {
     this.app.use('/', apiRoutes.get('/'));
     this.app.use('/api', apiRoutes);
@@ -38,10 +51,17 @@ class UsofServer {
     );
   }
 
-  public start(port: number): void {
-    this.app.listen(port, () => {
-      startupLogger.info(`Server is running on http://localhost:${port}`);
-    });
+  public async start(port: number): Promise<void> {
+    try {
+      await databaseService.connectWithRetries();
+      this.app.listen(port, () => {
+        startupLogger.info(`Server is running on http://localhost:${port}`);
+      });
+    } catch (error) {
+      startupLogger.error(
+        'Unable to start server due to database connection failure',
+      );
+    }
   }
 }
 

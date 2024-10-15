@@ -20,7 +20,7 @@ export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ unique: true })
   @Length(4, 20)
   login!: string;
 
@@ -30,7 +30,7 @@ export class User {
   @Column()
   full_name!: string;
 
-  @Column()
+  @Column({ unique: true })
   @IsEmail()
   email!: string;
 

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { UserRouter } from './user.route';
+import { UserRouter } from './user.routes';
 
 const router = Router();
 
