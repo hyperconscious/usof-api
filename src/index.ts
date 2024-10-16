@@ -1,4 +1,4 @@
-import config from './config/config';
+import config from './config/env.config';
 import UsofServer from './app';
 import { startupLogger } from './utils/logger';
 

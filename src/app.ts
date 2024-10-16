@@ -27,19 +27,8 @@ class UsofServer {
     this.app.use(requestLogger);
   }
 
-  // private async initializeDatabase(): Promise<void> {
-  //   try {
-  //     await AppDataSource.initialize();
-  //     startupLogger.info('Database connection established successfully');
-  //   } catch (error) {
-  //     startupLogger.error('Failed to initialize database connection');
-  //     startupLogger.error(`Error details: ${error}`);
-  //     throw new Error('Database connection failed');
-  //   }
-  // }
-
   private configureRoutes(): void {
-    this.app.use('/', apiRoutes.get('/'));
+    // this.app.use('/', apiRoutes.get('/'));
     this.app.use('/api', apiRoutes);
   }
 

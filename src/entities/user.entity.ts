@@ -35,7 +35,7 @@ export class User {
   email!: string;
 
   @Column()
-  profile_picture!: string;
+  avatar!: string;
 
   @Column()
   rating!: number;

@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { BadRequestError, NotFoundError } from '../utils/http-errors';
 import { User } from '../entities/user.entity';
-import { AppDataSource } from '../config/ormconfig';
+import { AppDataSource } from '../config/orm.config';
 import { createUserDto, updateUserDto } from '../dto/user.dto';
 
 export const enum ServiceMethod {
@@ -10,6 +10,9 @@ export const enum ServiceMethod {
 }
 
 export class UserService {
+  static getAllUsers() {
+    throw new Error('Method not implemented.');
+  }
   private userRepository: Repository<User>;
 
   private validateUserDTO(userData: Partial<User>, method: ServiceMethod) {
@@ -53,7 +56,7 @@ export class UserService {
       if (existingUser.login === newUser.login) {
         errors.push('Login already exists.');
       }
-      throw new BadRequestError(errors.join(' '));
+      throw new BadRequestError(errors.join('\n'));
     }
 
     newUser.hashPassword();
@@ -83,6 +86,7 @@ export class UserService {
   }
 
   public async getAllUsers(): Promise<User[]> {
+    console.error('Upload avatar error:');
     return await this.userRepository.find();
   }
 

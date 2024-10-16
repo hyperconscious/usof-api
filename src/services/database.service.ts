@@ -1,5 +1,5 @@
-import config from '../config/config';
-import { AppDataSource } from '../config/ormconfig';
+import config from '../config/env.config';
+import { AppDataSource } from '../config/orm.config';
 import { startupLogger } from '../utils/logger';
 
 class DatabaseService {

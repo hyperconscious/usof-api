@@ -3,7 +3,7 @@ import { Logger } from './logger';
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from 'joi';
 import { StatusCodes } from 'http-status-codes';
-import config from '../config/config';
+import config from '../config/env.config';
 
 export class ErrorHandler {
   private static logger = new Logger('ErrorHandler');
