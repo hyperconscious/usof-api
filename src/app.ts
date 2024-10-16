@@ -1,12 +1,13 @@
 import express from 'express';
 import 'reflect-metadata';
+import 'express-async-errors';
 import cors from 'cors';
 import { startupLogger } from './utils/logger';
-import { Request, Response, NextFunction } from 'express';
 import requestLogger from './middlewares/request-loger.middleware';
 import { router as apiRoutes } from './routes/index.routes';
-import { AppDataSource } from './config/ormconfig';
 import { databaseService } from './services/database.service';
+import { errorMiddleware } from './middlewares/error-handle.middleware';
+import { NotFoundError } from './utils/http-errors';
 
 class UsofServer {
   private app: express.Application;
@@ -26,16 +27,16 @@ class UsofServer {
     this.app.use(requestLogger);
   }
 
-  private async initializeDatabase(): Promise<void> {
-    try {
-      await AppDataSource.initialize();
-      startupLogger.info('Database connection established successfully');
-    } catch (error) {
-      startupLogger.error('Failed to initialize database connection');
-      startupLogger.error(`Error details: ${error}`);
-      throw new Error('Database connection failed');
-    }
-  }
+  // private async initializeDatabase(): Promise<void> {
+  //   try {
+  //     await AppDataSource.initialize();
+  //     startupLogger.info('Database connection established successfully');
+  //   } catch (error) {
+  //     startupLogger.error('Failed to initialize database connection');
+  //     startupLogger.error(`Error details: ${error}`);
+  //     throw new Error('Database connection failed');
+  //   }
+  // }
 
   private configureRoutes(): void {
     this.app.use('/', apiRoutes.get('/'));
@@ -43,12 +44,8 @@ class UsofServer {
   }
 
   private configureErrorHandling(): void {
-    this.app.use(
-      (err: Error, req: Request, res: Response, next: NextFunction) => {
-        startupLogger.error(`Error: ${err.message}`);
-        res.status(500).send('Internal Server Error');
-      },
-    );
+    this.app.use((req, res, next) => next(new NotFoundError()));
+    this.app.use(errorMiddleware);
   }
 
   public async start(port: number): Promise<void> {

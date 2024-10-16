@@ -4,6 +4,7 @@ export class HttpError extends Error {
   constructor(statusCode: StatusCodes, message: string) {
     super(message);
     this.name = this.constructor.name;
+    Object.setPrototypeOf(this, HttpError.prototype);
   }
 }
 
@@ -14,7 +15,7 @@ export class BadRequestError extends HttpError {
 }
 
 export class NotFoundError extends HttpError {
-  constructor(message: string = 'Not Found') {
+  constructor(message: string = 'Resource not found') {
     super(StatusCodes.NOT_FOUND, message);
   }
 }

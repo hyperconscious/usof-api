@@ -1,6 +1,5 @@
 import { Repository } from 'typeorm';
-import { validate, ValidationError } from 'class-validator';
-import { BadRequestError, NotFoundError } from '../utils/errors';
+import { BadRequestError, NotFoundError } from '../utils/http-errors';
 import { User } from '../entities/user.entity';
 import { AppDataSource } from '../config/ormconfig';
 import { createUserDto, updateUserDto } from '../dto/user.dto';
