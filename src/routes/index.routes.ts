@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import UserRouter from './user.routes';
+import userRouter from './user.routes';
+import authRouter from './auth.routes';
 
 const router = Router();
 
@@ -10,6 +11,7 @@ router.get('/', (req: Request, res: Response) => {
     .json({ message: 'Hello ma friend. Check other useful rotes.' });
 });
 
-router.use('/users', UserRouter);
+router.use('/users', userRouter);
+router.use('/auth', authRouter);
 
 export { router };

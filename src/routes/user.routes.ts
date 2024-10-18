@@ -1,57 +1,32 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { UserController } from '../controllers/user.controller';
 import { upload } from '../config/file-upload.config';
-const UserRouter = Router();
-const userController = new UserController();
+import { auth, authorizeRole } from '../middlewares/auth.middleware';
+import { UserRole } from '../entities/user.entity';
+const userRouter = Router();
 
-UserRouter.get(
+userRouter.get('/', auth, UserController.getAllUsers);
+
+userRouter.get('/my-profile', auth, UserController.getMe);
+
+userRouter.get('/:user_id', auth, UserController.getUserById);
+
+userRouter.post(
   '/',
-  /* auth, */ async (req: Request, res: Response) => {
-    await userController.getAllUsers(req, res);
-  },
+  auth,
+  authorizeRole(UserRole.Admin),
+  UserController.createUser,
 );
 
-UserRouter.get(
-  '/my-profile',
-  /* auth, */ async (req: Request, res: Response) => {
-    await userController.getUserById(req, res);
-  },
-);
+userRouter.patch('/:user_id', auth, UserController.updateUser);
 
-UserRouter.get(
-  '/:user_id',
-  /* auth, */ async (req: Request, res: Response) => {
-    await userController.getUserById(req, res);
-  },
-);
-
-UserRouter.post(
-  '/',
-  /* auth, auth[admin] */ async (req: Request, res: Response) => {
-    await userController.createUser(req, res);
-  },
-);
-
-UserRouter.patch(
-  '/:user_id',
-  /* auth, */ async (req: Request, res: Response, next: NextFunction) => {
-    await userController.updateUser(req, res, next);
-  },
-);
-
-UserRouter.patch(
+userRouter.patch(
   '/avatar',
-  /* auth, */ upload.single('avatar'),
-  async (req: Request, res: Response) => {
-    await userController.uploadAvatar(req, res);
-  },
+  auth,
+  upload.single('avatar'),
+  UserController.uploadAvatar,
 );
 
-UserRouter.delete(
-  '/:user_id',
-  /* auth, */ async (req: Request, res: Response) => {
-    await userController.deleteUser(req, res);
-  },
-);
+userRouter.delete('/:user_id', auth, UserController.deleteUser);
 
-export default UserRouter;
+export default userRouter;

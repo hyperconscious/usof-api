@@ -1,34 +1,45 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
-import { BadRequestError } from '../utils/http-errors';
+import { BadRequestError, UnauthorizedError } from '../utils/http-errors';
 import { StatusCodes } from 'http-status-codes';
+import { UserRole } from '../entities/user.entity';
 
 export class UserController {
-  private userService: UserService;
+  private static userService = new UserService();
 
-  constructor() {
-    this.userService = new UserService();
-  }
-
-  public async getAllUsers(req: Request, res: Response) {
-    const users = await this.userService.getAllUsers();
+  public static async getAllUsers(req: Request, res: Response) {
+    const users = await UserController.userService.getAllUsers();
     return res.status(StatusCodes.OK).json({ data: users });
   }
 
-  public async getUserById(req: Request, res: Response) {
-    const userId = parseInt(req.params.user_id, 10);
-    const user = await this.userService.getUserById(userId);
+  public static async getMe(req: Request, res: Response) {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new UnauthorizedError('You need to be logged in.');
+    }
+
+    const user = await UserController.userService.getUserById(userId);
     return res.status(StatusCodes.OK).json({ data: user });
   }
 
-  public async createUser(req: Request, res: Response) {
-    const { login, password, passwordConfirmation, email, role } = req.body;
+  public static async getUserById(req: Request, res: Response) {
+    const userId = parseInt(req.params.user_id, 10);
+
+    const user = await UserController.userService.getUserById(userId);
+    return res.status(StatusCodes.OK).json({ data: user });
+  }
+
+  public static async createUser(req: Request, res: Response) {
+    const { login, password, full_name, passwordConfirmation, email, role } =
+      req.body;
     if (password !== passwordConfirmation) {
       throw new BadRequestError('Password confirmation does not match.');
     }
 
-    const newUser = await this.userService.createUser({
+    const newUser = await UserController.userService.createUser({
       login,
+      full_name,
       password,
       email,
       role,
@@ -37,25 +48,51 @@ export class UserController {
     return res.status(StatusCodes.CREATED).json({ data: newUser });
   }
 
-  public async updateUser(req: Request, res: Response, next: NextFunction) {
-    const userId = parseInt(req.params.user_id, 10);
+  public static async updateUser(req: Request, res: Response) {
     const userData = req.body;
+    const userId = req.user?.id;
 
-    const updatedUser = await this.userService.updateUser(userId, userData);
+    if (!userId) {
+      throw new UnauthorizedError('You need to be logged in.');
+    }
+
+    if (
+      req.user?.role !== UserRole.Admin &&
+      userId !== parseInt(req.params.user_id, 10)
+    ) {
+      throw new BadRequestError('You are not authorized to update this user.');
+    }
+
+    const updatedUser = await UserController.userService.updateUser(
+      userId,
+      userData,
+    );
     return res
       .status(StatusCodes.OK)
       .json({ status: 'success', data: updatedUser });
   }
 
-  public async uploadAvatar(req: Request, res: Response) {
+  public static async uploadAvatar(req: Request, res: Response) {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new UnauthorizedError('You need to be logged in.');
+    }
+
+    if (
+      req.user?.role !== UserRole.Admin &&
+      userId !== parseInt(req.params.user_id, 10)
+    ) {
+      throw new BadRequestError('You are not authorized to update this user.');
+    }
+
     if (!req.file) {
       throw new BadRequestError('No file uploaded.');
     }
 
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    const userId = parseInt(req.params.user_id, 10);
 
-    const updatedUser = await this.userService.updateUser(userId, {
+    const updatedUser = await UserController.userService.updateUser(userId, {
       avatar: avatarUrl,
     });
     return res
@@ -63,9 +100,20 @@ export class UserController {
       .json({ message: 'Avatar uploaded successfully.', data: updatedUser });
   }
 
-  public async deleteUser(req: Request, res: Response) {
-    const userId = parseInt(req.params.user_id, 10);
-    await this.userService.deleteUser(userId);
+  public static async deleteUser(req: Request, res: Response) {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new UnauthorizedError('You need to be logged in.');
+    }
+
+    if (
+      req.user?.role !== UserRole.Admin &&
+      userId !== parseInt(req.params.user_id, 10)
+    ) {
+      throw new BadRequestError('You are not authorized to update this user.');
+    }
+    await UserController.userService.deleteUser(userId);
     return res.status(StatusCodes.NO_CONTENT).json();
   }
 }

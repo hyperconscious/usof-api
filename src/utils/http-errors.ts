@@ -20,13 +20,13 @@ export class NotFoundError extends HttpError {
   }
 }
 
-export class UnauthorizedException extends HttpError {
+export class UnauthorizedError extends HttpError {
   constructor(message: string = 'Unauthorized') {
     super(StatusCodes.UNAUTHORIZED, message);
   }
 }
 
-export class ForbiddenException extends HttpError {
+export class ForbiddenError extends HttpError {
   constructor(message: string = 'Forbidden') {
     super(StatusCodes.FORBIDDEN, message);
   }

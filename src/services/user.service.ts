@@ -105,7 +105,7 @@ export class UserService {
       return user;
     }
 
-    throw new BadRequestError('Invalid credentials.');
+    throw new BadRequestError('Invalid login or password.');
   }
 
   public async deleteUser(id: number): Promise<boolean> {

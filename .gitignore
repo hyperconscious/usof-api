@@ -3,6 +3,8 @@ dist
 build
 .env
 
+uploads/avatars/*
+
 # docker-compose.override.yml
 # .dockerignore
 

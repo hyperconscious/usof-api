@@ -34,10 +34,10 @@ export class User {
   @IsEmail()
   email!: string;
 
-  @Column()
+  @Column({ default: '' })
   avatar!: string;
 
-  @Column()
+  @Column({ default: 0 })
   rating!: number;
 
   @Column({
