@@ -2,11 +2,13 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 import { JWTService } from '../services/jwt.service';
 import { StatusCodes } from 'http-status-codes';
-import { BadRequestError } from '../utils/http-errors';
+import { BadRequestError, UnauthorizedError } from '../utils/http-errors';
+import { MailService } from '../services/mail.service';
 
 export class AuthController {
   private static userService = new UserService();
   private static jwtService = new JWTService();
+  private static mailService = new MailService();
 
   public static async register(req: Request, res: Response) {
     const {
@@ -30,6 +32,12 @@ export class AuthController {
     });
     const accessToken = AuthController.jwtService.generateAccessToken(user);
     const refreshToken = AuthController.jwtService.generateRefreshToken(user);
+    const mailToken = AuthController.jwtService.generateEmailToken(user);
+
+    await AuthController.mailService.sendVerificationEmail(
+      user.email,
+      mailToken,
+    );
 
     return res.status(StatusCodes.CREATED).json({ accessToken, refreshToken });
   }
@@ -68,5 +76,27 @@ export class AuthController {
     return res
       .status(StatusCodes.OK)
       .json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+  }
+
+  public static async verifyEmail(req: Request, res: Response) {
+    const { token } = req.query;
+
+    if (!token) {
+      throw new BadRequestError('Verification token is missing.');
+    }
+
+    const decoded = AuthController.jwtService.verifyEmailToken(token as string);
+
+    const user = await AuthController.userService.getUserById(decoded.id);
+
+    if (!user || user.verified) {
+      throw new UnauthorizedError('User already verified or does not exist.');
+    }
+
+    await AuthController.userService.updateUser(user.id, { verified: true });
+
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: 'Email verified successfully.' });
   }
 }

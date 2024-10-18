@@ -10,14 +10,20 @@ const envSchema = Joi.object({
 
   JWT_ACCESS_TOKEN_SECRET: Joi.string().default('defaultAccessTokenSecret'),
   JWT_REFRESH_TOKEN_SECRET: Joi.string().default('defaultRefreshTokenSecret'),
+  JWT_EMAIL_TOKEN_SECRET: Joi.string().default('defaultEmailTokenSecret'),
   JWT_ACCESS_TOKEN_EXPIRY: Joi.string().default('15m'),
   JWT_REFRESH_TOKEN_EXPIRY: Joi.string().default('7d'),
+  JWT_EMAIL_TOKEN_EXPIRY: Joi.string().default('7m'),
 
   DB_USER: Joi.string().required(),
   DB_PASS: Joi.string().required(),
   DB_NAME: Joi.string().required(),
   DB_HOST: Joi.string().default('localhost'),
   DB_PORT: Joi.number().default(3306),
+
+  MAIL_HOST: Joi.string().required(),
+  MAIL_USER: Joi.string().required(),
+  MAIL_PASS: Joi.string().required(),
 
   MYSQLDB_LOCAL_PORT: Joi.number().default(3307),
   MYSQLDB_DOCKER_PORT: Joi.number().default(3306),
@@ -43,8 +49,10 @@ const config = {
   JWT: {
     accessTokenSecret: envVars.JWT_ACCESS_TOKEN_SECRET,
     refreshTokenSecret: envVars.JWT_REFRESH_TOKEN_SECRET,
+    emailTokenSecret: envVars.JWT_EMAIL_TOKEN_SECRET,
     accessTokenExpiry: envVars.JWT_ACCESS_TOKEN_EXPIRY,
     refreshTokenExpiry: envVars.JWT_REFRESH_TOKEN_EXPIRY,
+    emailTokenExpiry: envVars.JWT_EMAIL_TOKEN_EXPIRY,
   },
   database: {
     user: envVars.DB_USER,
@@ -53,6 +61,11 @@ const config = {
     host: envVars.DB_HOST,
     port: envVars.DB_PORT,
     url: envVars.DATABASE_URL,
+  },
+  mail: {
+    host: envVars.MAIL_HOST,
+    user: envVars.MAIL_USER,
+    pass: envVars.MAIL_PASS,
   },
   nodePorts: {
     local: envVars.NODE_LOCAL_PORT,

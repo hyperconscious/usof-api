@@ -35,6 +35,8 @@ export const createUserDto = Joi.object({
     'any.required': 'Email is required.',
   }),
 
+  verified: Joi.boolean().default(false),
+
   avatar: Joi.string().optional().allow(null, ''),
 
   rating: Joi.number().integer().min(0).default(0),
@@ -72,6 +74,8 @@ export const updateUserDto = Joi.object({
   email: Joi.string().email().messages({
     'string.email': 'Email must be a valid email address.',
   }),
+
+  verified: Joi.boolean().default(false),
 
   avatar: Joi.string().optional().allow(null, ''),
 

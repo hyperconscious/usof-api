@@ -34,6 +34,9 @@ export class User {
   @IsEmail()
   email!: string;
 
+  @Column({ default: false })
+  verified!: boolean;
+
   @Column({ default: '' })
   avatar!: string;
 
