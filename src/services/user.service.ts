@@ -72,6 +72,12 @@ export class UserService {
       throw new NotFoundError('User not found.');
     }
 
+    if (userData.password) {
+      user.password = userData.password;
+      user.hashPassword();
+      userData.password = user.password;
+    }
+
     const updatedUser = this.userRepository.merge(user, userData);
 
     return this.userRepository.save(updatedUser);
@@ -79,6 +85,14 @@ export class UserService {
 
   public async getUserById(id: number): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    return user;
+  }
+
+  public async getUserByEmail(email: string): Promise<User> {
+    const user = await this.userRepository.findOneBy({ email });
     if (!user) {
       throw new NotFoundError('User not found');
     }

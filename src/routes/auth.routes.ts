@@ -8,7 +8,7 @@ authRouter.post('/login', AuthController.login);
 authRouter.post('/refresh', AuthController.refresh);
 
 authRouter.post('/verify-email/', AuthController.verifyEmail);
-// authRouter.post('/password-reset', );
-// authRouter.post('/password-reset/<confirm_token>', );
+authRouter.post('/forgot-password', AuthController.forgotPassword);
+authRouter.post('/password-reset', AuthController.resetPassword);
 
 export default authRouter;

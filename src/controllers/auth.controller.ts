@@ -4,6 +4,7 @@ import { JWTService } from '../services/jwt.service';
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, UnauthorizedError } from '../utils/http-errors';
 import { MailService } from '../services/mail.service';
+import { User } from '../entities/user.entity';
 
 export class AuthController {
   private static userService = new UserService();
@@ -98,5 +99,46 @@ export class AuthController {
     return res
       .status(StatusCodes.OK)
       .json({ message: 'Email verified successfully.' });
+  }
+
+  public static async forgotPassword(req: Request, res: Response) {
+    const { email } = req.body;
+    let user: User;
+    try {
+      user = await AuthController.userService.getUserByEmail(email);
+    } catch (error) {
+      throw new BadRequestError('User with this email does not exist.');
+    }
+
+    const mailToken = AuthController.jwtService.generateEmailToken(user);
+
+    await AuthController.mailService.sendPasswordResetEmail(email, mailToken);
+
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: 'Password reset email sent successfully.' });
+  }
+
+  public static async resetPassword(req: Request, res: Response) {
+    const { token } = req.query;
+    const { password, passwordConfirmation } = req.body;
+
+    if (password && password !== passwordConfirmation) {
+      throw new BadRequestError('Password confirmation does not match.');
+    }
+
+    const decoded = AuthController.jwtService.verifyEmailToken(token as string);
+
+    const user = await AuthController.userService.getUserById(decoded.id);
+
+    if (!user) {
+      throw new UnauthorizedError('User does not exist.');
+    }
+
+    await AuthController.userService.updateUser(user.id, { password });
+
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: 'Password reset successfully.' });
   }
 }
