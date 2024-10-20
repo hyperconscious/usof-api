@@ -3,15 +3,20 @@ import { UserService } from '../services/user.service';
 import { BadRequestError, UnauthorizedError } from '../utils/http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { UserRole } from '../entities/user.entity';
+import { PaginationOptions, SortOptions } from '../utils/paginator';
 
 export class UserController {
   private static userService = new UserService();
 
   public static async getAllUsers(req: Request, res: Response) {
-    const users = await UserController.userService.getAllUsers(
-      parseInt(req.query.page as string, 10),
-      parseInt(req.query.limit as string, 10),
-    );
+    const { page = '1', limit = '10'} = req.query;
+
+    const paginationOptions: PaginationOptions = {
+      page: parseInt(page as string, 10),
+      limit: parseInt(limit as string, 10),
+    };
+
+    const users = await UserController.userService.getAllUsers(paginationOptions);
     return res.status(StatusCodes.OK).json({ data: users });
   }
 
