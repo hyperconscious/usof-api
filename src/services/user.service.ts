@@ -3,6 +3,7 @@ import { BadRequestError, NotFoundError } from '../utils/http-errors';
 import { User } from '../entities/user.entity';
 import { AppDataSource } from '../config/orm.config';
 import { createUserDto, updateUserDto } from '../dto/user.dto';
+import { PaginationOptions, Paginator } from '../utils/paginator';
 
 export const enum ServiceMethod {
   update,
@@ -10,10 +11,15 @@ export const enum ServiceMethod {
 }
 
 export class UserService {
+  private userRepository: Repository<User>;
+
+  constructor() {
+    this.userRepository = AppDataSource.getRepository(User);
+  }
+
   static getAllUsers() {
     throw new Error('Method not implemented.');
   }
-  private userRepository: Repository<User>;
 
   private validateUserDTO(userData: Partial<User>, method: ServiceMethod) {
     const dto = method === ServiceMethod.create ? createUserDto : updateUserDto;
@@ -24,10 +30,6 @@ export class UserService {
         error.details.map((detail) => detail.message).join('; '),
       );
     }
-  }
-
-  constructor() {
-    this.userRepository = AppDataSource.getRepository(User);
   }
 
   public async findByEmailOrLogin(
@@ -68,9 +70,6 @@ export class UserService {
     this.validateUserDTO(userData, ServiceMethod.update);
 
     const user = await this.getUserById(id);
-    if (!user) {
-      throw new NotFoundError('User not found.');
-    }
 
     if (userData.password) {
       user.password = userData.password;
@@ -99,9 +98,13 @@ export class UserService {
     return user;
   }
 
-  public async getAllUsers(): Promise<User[]> {
-    console.error('Upload avatar error:');
-    return await this.userRepository.find();
+  public async getAllUsers(
+    PaginationOptions: PaginationOptions,
+  ): Promise<{ data: User[]; total: number }> {
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+    const paginator = new Paginator<User>(PaginationOptions);
+
+    return await paginator.paginate(queryBuilder);
   }
 
   public async validateUserCredentials(

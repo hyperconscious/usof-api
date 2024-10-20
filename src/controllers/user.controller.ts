@@ -8,24 +8,19 @@ export class UserController {
   private static userService = new UserService();
 
   public static async getAllUsers(req: Request, res: Response) {
-    const users = await UserController.userService.getAllUsers();
+    const users = await UserController.userService.getAllUsers(
+      parseInt(req.query.page as string, 10),
+      parseInt(req.query.limit as string, 10),
+    );
     return res.status(StatusCodes.OK).json({ data: users });
   }
 
-  public static async getMe(req: Request, res: Response) {
-    const userId = req.user?.id;
+  public static async getUserById(req: Request, res: Response) {
+    const userId = parseInt(req.params.user_id, 10) || req.user?.id!;
 
-    if (!userId) {
+    if (userId === undefined) {
       throw new UnauthorizedError('You need to be logged in.');
     }
-
-    const user = await UserController.userService.getUserById(userId);
-    return res.status(StatusCodes.OK).json({ data: user });
-  }
-
-  public static async getUserById(req: Request, res: Response) {
-    const userId = parseInt(req.params.user_id, 10);
-
     const user = await UserController.userService.getUserById(userId);
     return res.status(StatusCodes.OK).json({ data: user });
   }

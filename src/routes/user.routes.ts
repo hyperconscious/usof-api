@@ -7,7 +7,7 @@ const userRouter = Router();
 
 userRouter.get('/', auth, UserController.getAllUsers);
 
-userRouter.get('/my-profile', auth, UserController.getMe);
+userRouter.get('/my-profile', auth, UserController.getUserById);
 
 userRouter.get('/:user_id', auth, UserController.getUserById);
 
