@@ -1,23 +1,35 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
-import { BadRequestError, UnauthorizedError } from '../utils/http-errors';
+import {
+  BadRequestError,
+  ForbiddenError,
+  UnauthorizedError,
+} from '../utils/http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { UserRole } from '../entities/user.entity';
-import { PaginationOptions, SortOptions } from '../utils/paginator';
+import { QueryOptions } from '../utils/paginator';
+import { QueryOptionsDto } from '../dto/query-options.dto';
 
 export class UserController {
   private static userService = new UserService();
 
+  private static validateQueryDto(req: Request): QueryOptions {
+    const { error, value: queryOptions } = QueryOptionsDto.validate(req.query, {
+      abortEarly: false,
+    });
+    if (error) {
+      throw new BadRequestError(
+        error.details.map((detail) => detail.message).join('; '),
+      );
+    }
+    return queryOptions;
+  }
+
   public static async getAllUsers(req: Request, res: Response) {
-    const { page = '1', limit = '10'} = req.query;
+    const queryOptions = UserController.validateQueryDto(req);
 
-    const paginationOptions: PaginationOptions = {
-      page: parseInt(page as string, 10),
-      limit: parseInt(limit as string, 10),
-    };
-
-    const users = await UserController.userService.getAllUsers(paginationOptions);
-    return res.status(StatusCodes.OK).json({ data: users });
+    const users = await UserController.userService.getAllUsers(queryOptions);
+    return res.status(StatusCodes.OK).json(users);
   }
 
   public static async getUserById(req: Request, res: Response) {
@@ -60,7 +72,7 @@ export class UserController {
       req.user?.role !== UserRole.Admin &&
       userId !== parseInt(req.params.user_id, 10)
     ) {
-      throw new BadRequestError('You are not authorized to update this user.');
+      throw new ForbiddenError('You are not authorized to update this user.');
     }
 
     const updatedUser = await UserController.userService.updateUser(
@@ -83,7 +95,7 @@ export class UserController {
       req.user?.role !== UserRole.Admin &&
       userId !== parseInt(req.params.user_id, 10)
     ) {
-      throw new BadRequestError('You are not authorized to update this user.');
+      throw new ForbiddenError('You are not authorized to update this user.');
     }
 
     if (!req.file) {
@@ -111,7 +123,7 @@ export class UserController {
       req.user?.role !== UserRole.Admin &&
       userId !== parseInt(req.params.user_id, 10)
     ) {
-      throw new BadRequestError('You are not authorized to update this user.');
+      throw new ForbiddenError('You are not authorized to update this user.');
     }
     await UserController.userService.deleteUser(userId);
     return res.status(StatusCodes.NO_CONTENT).json();

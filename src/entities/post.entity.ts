@@ -49,4 +49,10 @@ export class Post {
   @ManyToMany(() => Category, { eager: true })
   @JoinTable()
   categories!: Category[];
+
+  @Column({ default: 0 })
+  likes!: number;
+
+  @Column({ default: 0 })
+  dislikes!: number;
 }

@@ -1,15 +1,9 @@
-export interface PaginationOptions {
+export interface QueryOptions {
   page: number;
   limit: number;
-}
-
-export interface SortOptions {
-  field: string;
-  direction: 'ASC' | 'DESC';
-}
-
-export interface FilterOptions {
-  [key: string]: any;
+  sortField?: string;
+  sortDirection?: 'ASC' | 'DESC';
+  filters?: Record<string, string | string[]>;
 }
 
 export class Paginator<T> {
@@ -17,25 +11,31 @@ export class Paginator<T> {
   private limit: number;
   private sortField: string;
   private sortDirection: 'ASC' | 'DESC';
-  private filters: FilterOptions;
+  private filters: Record<string, string | string[]>;
 
-  constructor(
-    paginationOptions: PaginationOptions,
-    sortOptions?: SortOptions,
-    filters?: FilterOptions,
-  ) {
+  constructor(paginationOptions: QueryOptions) {
     this.page = paginationOptions.page || 1;
     this.limit = paginationOptions.limit || 10;
-    this.sortField = sortOptions?.field || 'id';
-    this.sortDirection = sortOptions?.direction || 'ASC';
-    this.filters = filters || {};
+    this.sortField = paginationOptions.sortField || 'id';
+    this.sortDirection = paginationOptions.sortDirection || 'ASC';
+    this.filters = paginationOptions.filters || {};
   }
 
   public async paginate(
     queryBuilder: any,
   ): Promise<{ data: T[]; total: number }> {
     Object.keys(this.filters).forEach((filterKey) => {
-      queryBuilder.where(filterKey, this.filters[filterKey]);
+      const filterValue = this.filters[filterKey];
+
+      if (Array.isArray(filterValue)) {
+        queryBuilder.andWhere(`${filterKey} IN (:...${filterKey})`, {
+          [filterKey]: filterValue,
+        });
+      } else {
+        queryBuilder.andWhere(`${filterKey} = :${filterKey}`, {
+          [filterKey]: filterValue,
+        });
+      }
     });
 
     const total = await queryBuilder.getCount();

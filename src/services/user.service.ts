@@ -3,7 +3,7 @@ import { BadRequestError, NotFoundError } from '../utils/http-errors';
 import { User } from '../entities/user.entity';
 import { AppDataSource } from '../config/orm.config';
 import { createUserDto, updateUserDto } from '../dto/user.dto';
-import { PaginationOptions, Paginator } from '../utils/paginator';
+import { Paginator, QueryOptions } from '../utils/paginator';
 
 export const enum ServiceMethod {
   update,
@@ -15,10 +15,6 @@ export class UserService {
 
   constructor() {
     this.userRepository = AppDataSource.getRepository(User);
-  }
-
-  static getAllUsers() {
-    throw new Error('Method not implemented.');
   }
 
   private validateUserDTO(userData: Partial<User>, method: ServiceMethod) {
@@ -99,10 +95,10 @@ export class UserService {
   }
 
   public async getAllUsers(
-    PaginationOptions: PaginationOptions,
+    queryOptions: QueryOptions,
   ): Promise<{ data: User[]; total: number }> {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
-    const paginator = new Paginator<User>(PaginationOptions);
+    const paginator = new Paginator<User>(queryOptions);
 
     return await paginator.paginate(queryBuilder);
   }
