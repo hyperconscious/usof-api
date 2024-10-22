@@ -6,10 +6,11 @@ import { AppDataSource } from '../config/orm.config';
 import { BadRequestError, NotFoundError } from '../utils/http-errors';
 import { createPostDto, updatePostDto } from '../dto/post.dto';
 import { ServiceMethod, UserService } from './user.service';
-import { Paginator, QueryOptions } from '../utils/paginator';
+import { Paginator } from '../utils/paginator';
+import { QueryOptions } from '../dto/query-options.dto';
 import { CreateCommentDto } from '../dto/comment.dto';
 import { Like } from '../entities/like.entity';
-import { User } from '../entities/user.entity';
+import { auth } from '../middlewares/auth.middleware';
 
 export class PostService {
   private postRepository: Repository<Post>;
@@ -61,11 +62,13 @@ export class PostService {
       id: In(postData.categories?.map((c) => c.id) || []),
     });
 
-    if (categories.length !== post.categories?.length) {
+    if (categories.length !== postData.categories?.length) {
       throw new BadRequestError('One or more categories are invalid.');
     }
 
     const newPost = this.postRepository.create(post);
+    newPost.categories = categories;
+    newPost.author = await this.UserService.getUserById(postData.author?.id!);
     return await this.postRepository.save(newPost);
   }
 
@@ -81,8 +84,10 @@ export class PostService {
     if (categories.length !== updatedPost.categories?.length) {
       throw new BadRequestError('One or more categories are invalid.');
     }
+    updatedPost.categories = categories;
 
-    return await this.postRepository.merge(post, updatedPost);
+    const mergedPost = this.postRepository.merge(post, updatedPost);
+    return await this.postRepository.save(mergedPost);
   }
 
   public async getPostById(id: number): Promise<Post> {
@@ -96,7 +101,10 @@ export class PostService {
   public async getAllPosts(
     queryOptions: QueryOptions,
   ): Promise<{ data: Post[]; total: number }> {
-    const queryBuilder = this.postRepository.createQueryBuilder('post');
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('post.categories', 'categories');
     const paginator = new Paginator<Post>(queryOptions);
     return await paginator.paginate(queryBuilder);
   }
@@ -106,9 +114,8 @@ export class PostService {
     queryOptions: QueryOptions,
   ): Promise<{ data: Comment[]; total: number }> {
     const post = await this.getPostById(postId);
-    const queryBuilder = this.postRepository
-      .createQueryBuilder('comment')
-      .where('comment.postId = :postId', { postId });
+    const queryBuilder = this.commentRepository.createQueryBuilder('comment');
+    queryOptions.filters = { postId: post.id };
     const paginator = new Paginator<Comment>(queryOptions);
     return await paginator.paginate(queryBuilder);
   }
@@ -121,11 +128,17 @@ export class PostService {
 
   public async createComment(
     postId: number,
+    authorId: number,
     commentData: Partial<Comment>,
   ): Promise<Comment> {
     const post = await this.getPostById(postId);
+    const author = await this.UserService.getUserById(authorId);
     const comment = this.validateCommentDTO(commentData);
-    const newComment = this.commentRepository.create({ ...comment, post });
+    const newComment = this.commentRepository.create({
+      ...comment,
+      post,
+      author,
+    });
     return await this.commentRepository.save(newComment);
   }
 
@@ -139,7 +152,43 @@ export class PostService {
     return post.likes;
   }
 
-  public async handleLikeDislike(
+  public async AddLikeDislike(
+    postId: number,
+    userId: number,
+    type: 'like' | 'dislike',
+  ): Promise<Like> {
+    const post = await this.getPostById(postId);
+    const author = await this.UserService.getUserById(userId);
+    const existingLike = await this.likeRepository.findOneBy({
+      post: { id: postId },
+      author: { id: userId },
+      type,
+    });
+    if (existingLike !== null) {
+      throw new BadRequestError('You have already liked/disliked this post');
+    }
+    const oppositeType = type === 'like' ? 'dislike' : 'like';
+    const oppositeLike = await this.likeRepository.findOneBy({
+      post: { id: postId },
+      author: { id: userId },
+      type: oppositeType,
+    });
+    if (oppositeLike) {
+      throw new BadRequestError('You have already liked/disliked this post');
+    }
+    const newLike = this.likeRepository.create({
+      post,
+      author,
+      entityType: 'post',
+      type,
+    });
+    await this.likeRepository.save(newLike);
+    post.likes += 1;
+    await this.postRepository.save(post);
+    return newLike;
+  }
+
+  public async DeleteLikeDislike(
     postId: number,
     userId: number,
     type: 'like' | 'dislike',
@@ -153,6 +202,8 @@ export class PostService {
     });
     if (existingLike !== null) {
       this.likeRepository.remove(existingLike);
+      post.likes -= 1;
+      await this.postRepository.save(post);
       return existingLike;
     }
     const oppositeType = type === 'like' ? 'dislike' : 'like';
@@ -163,15 +214,11 @@ export class PostService {
     });
     if (oppositeLike) {
       await this.likeRepository.remove(oppositeLike);
+      post.dislikes -= 1;
+      await this.postRepository.save(post);
+      return oppositeLike;
     }
-    const newLike = this.likeRepository.create({
-      post,
-      author,
-      entityType: 'post',
-      type,
-    });
-    await this.likeRepository.save(newLike);
-    return newLike;
+    throw new BadRequestError('You have not liked/disliked this post');
   }
 }
 

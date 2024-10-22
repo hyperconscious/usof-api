@@ -1,5 +1,24 @@
 import * as Joi from 'joi';
 
+export interface AuthorFilter {
+  id: number;
+}
+
+export interface Filters {
+  categories?: string | string[];
+  postId?: number;
+  status?: 'active' | 'inactive';
+  postAuthor?: AuthorFilter;
+}
+
+export interface QueryOptions {
+  page: number;
+  limit: number;
+  sortField?: string;
+  sortDirection?: 'ASC' | 'DESC';
+  filters?: Filters;
+}
+
 export const QueryOptionsDto = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
@@ -13,5 +32,8 @@ export const QueryOptionsDto = Joi.object({
       )
       .optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
+    postAuthor: Joi.object({
+      id: Joi.number().integer().min(1).required(),
+    }).optional(),
   }).optional(),
 });

@@ -26,3 +26,18 @@ export function authorizeRole(requiredRole: string) {
     next();
   };
 }
+
+export function authorizeUser(req: Request, res: Response, next: NextFunction) {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (token) {
+    try {
+      const jwtService = new JWTService();
+      const decoded = jwtService.verifyAccessToken(token);
+      req.user = decoded;
+    } catch (err) {
+      req.user = undefined;
+    }
+  }
+  next();
+}

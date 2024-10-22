@@ -1,17 +1,11 @@
-export interface QueryOptions {
-  page: number;
-  limit: number;
-  sortField?: string;
-  sortDirection?: 'ASC' | 'DESC';
-  filters?: Record<string, string | string[]>;
-}
+import { Filters, QueryOptions } from '../dto/query-options.dto';
 
 export class Paginator<T> {
   private page: number;
   private limit: number;
   private sortField: string;
   private sortDirection: 'ASC' | 'DESC';
-  private filters: Record<string, string | string[]>;
+  private filters: Filters;
 
   constructor(paginationOptions: QueryOptions) {
     this.page = paginationOptions.page || 1;
@@ -25,12 +19,19 @@ export class Paginator<T> {
     queryBuilder: any,
   ): Promise<{ data: T[]; total: number }> {
     Object.keys(this.filters).forEach((filterKey) => {
-      const filterValue = this.filters[filterKey];
+      const filterValue = this.filters[filterKey as keyof Filters];
 
       if (Array.isArray(filterValue)) {
         queryBuilder.andWhere(`${filterKey} IN (:...${filterKey})`, {
           [filterKey]: filterValue,
         });
+      } else if (typeof filterValue === 'object' && filterValue !== null) {
+        // palka
+        if (filterKey === 'postAuthor') {
+          queryBuilder.andWhere(`author.id = :id`, {
+            id: filterValue.id,
+          });
+        }
       } else {
         queryBuilder.andWhere(`${filterKey} = :${filterKey}`, {
           [filterKey]: filterValue,
@@ -43,8 +44,9 @@ export class Paginator<T> {
     const data = await queryBuilder
       .limit(this.limit)
       .offset((this.page - 1) * this.limit)
-      .getRawMany();
+      .getMany();
 
     return { data, total: total };
   }
 }
+export { QueryOptions };

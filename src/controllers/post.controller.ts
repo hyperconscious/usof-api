@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { QueryOptionsDto } from '../dto/query-options.dto';
+import { QueryOptions, QueryOptionsDto } from '../dto/query-options.dto';
 import { PostService } from '../services/post.service';
 import { BadRequestError, ForbiddenError } from '../utils/http-errors';
-import { QueryOptions } from '../utils/paginator';
 import { StatusCodes } from 'http-status-codes';
 import { UserRole } from '../entities/user.entity';
 
@@ -23,12 +22,24 @@ export class PostController {
 
   public static async getAllposts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
+    queryOptions.sortField = queryOptions.sortField || 'likes';
     if (req.user?.role !== UserRole.Admin) {
       queryOptions.filters = {
         ...queryOptions.filters,
         status: 'active',
       };
     }
+    const posts = await PostController.postService.getAllPosts(queryOptions);
+    return res.status(StatusCodes.OK).json(posts);
+  }
+
+  public static async getMyPosts(req: Request, res: Response) {
+    const queryOptions = PostController.validateQueryDto(req);
+    queryOptions.sortField = queryOptions.sortField || 'likes';
+    queryOptions.filters = {
+      ...queryOptions.filters,
+      postAuthor: { id: req.user?.id! },
+    };
     const posts = await PostController.postService.getAllPosts(queryOptions);
     return res.status(StatusCodes.OK).json(posts);
   }
@@ -78,10 +89,12 @@ export class PostController {
         'You are not authorized to create comment on this post.',
       );
     }
-    const comment = await PostController.postService.createComment(postId, {
-      ...req.body,
-      userId: req.user?.id!,
-    });
+    const comment = await PostController.postService.createComment(
+      postId,
+      req.user?.id!,
+      req.body,
+    );
+
     return res.status(StatusCodes.CREATED).json({ data: comment });
   }
 
@@ -121,14 +134,24 @@ export class PostController {
   public static async createPost(req: Request, res: Response) {
     const post = await PostController.postService.createPost({
       ...req.body,
-      authorId: req.user?.id!,
+      author: { id: req.user?.id! },
     });
     return res.status(StatusCodes.CREATED).json({ data: post });
   }
 
-  public static async handleLikeDislike(req: Request, res: Response) {
+  public static async AddLikeDislike(req: Request, res: Response) {
     const postId = parseInt(req.params.post_id, 10);
-    const like = await PostController.postService.handleLikeDislike(
+    const like = await PostController.postService.AddLikeDislike(
+      postId,
+      req.user?.id!,
+      req.body.type,
+    );
+    return res.status(StatusCodes.OK).json({ data: like });
+  }
+
+  public static async DeleteLikeDislike(req: Request, res: Response) {
+    const postId = parseInt(req.params.post_id, 10);
+    const like = await PostController.postService.DeleteLikeDislike(
       postId,
       req.user?.id!,
       req.body.type,

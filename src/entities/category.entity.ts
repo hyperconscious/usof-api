@@ -1,5 +1,5 @@
 import { IsNotEmpty } from 'class-validator';
-import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
 export class Category {
@@ -7,7 +7,7 @@ export class Category {
   id!: number;
 
   @Column({ unique: true })
-  @IsNotEmpty({ message: 'Title is required' })
+  @IsNotEmpty({ message: 'Title' })
   title!: string;
 
   @Column('text', { nullable: true })

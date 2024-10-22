@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { auth } from '../middlewares/auth.middleware';
 
 export const createPostDto = Joi.object({
   title: Joi.string().min(3).max(255).required().messages({
@@ -17,13 +18,27 @@ export const createPostDto = Joi.object({
   }),
 
   categories: Joi.array()
-    .items(Joi.number().required())
+    .items(
+      Joi.object({
+        id: Joi.number().required().messages({
+          'number.base': 'Category ID must be a number.',
+          'any.required': 'Category ID is required.',
+        }),
+        title: Joi.string().required().messages({
+          'string.base': 'Category title must be a string.',
+          'any.required': 'Category title is required.',
+        }),
+        description: Joi.string().required().messages({
+          'string.base': 'Category description must be a string.',
+          'any.required': 'Category description is required.',
+        }),
+      }),
+    )
     .min(1)
-    .required()
+    .optional()
     .messages({
       'array.base': 'Categories must be an array.',
       'array.min': 'At least one category is required.',
-      'any.required': 'Categories are required.',
     }),
 
   status: Joi.string().valid('active', 'inactive').default('active').messages({
@@ -31,10 +46,12 @@ export const createPostDto = Joi.object({
     'any.only': 'Status must be either active or inactive.',
   }),
 
-  authorId: Joi.number().required().messages({
-    'number.base': 'Author ID must be a number.',
-    'any.required': 'Author ID is required.',
-  }),
+  author: Joi.object({
+    id: Joi.number().required().messages({
+      'number.base': 'Author ID must be a number.',
+      'any.required': 'Author ID is required.',
+    }),
+  }).required(),
 
   publishDate: Joi.date()
     .default(() => new Date())
@@ -58,7 +75,22 @@ export const updatePostDto = Joi.object({
   }),
 
   categories: Joi.array()
-    .items(Joi.number().required())
+    .items(
+      Joi.object({
+        id: Joi.number().required().messages({
+          'number.base': 'Category ID must be a number.',
+          'any.required': 'Category ID is required.',
+        }),
+        title: Joi.string().required().messages({
+          'string.base': 'Category title must be a string.',
+          'any.required': 'Category title is required.',
+        }),
+        description: Joi.string().required().messages({
+          'string.base': 'Category description must be a string.',
+          'any.required': 'Category description is required.',
+        }),
+      }),
+    )
     .min(1)
     .optional()
     .messages({
@@ -74,4 +106,4 @@ export const updatePostDto = Joi.object({
   publishDate: Joi.date().optional().messages({
     'date.base': 'Publish date must be a valid date.',
   }),
-}).min(2);
+}).min(1);

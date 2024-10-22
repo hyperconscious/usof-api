@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
+  ManyToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Post } from './post.entity';

@@ -1,22 +1,39 @@
 import { Router, Request, Response } from 'express';
 import { PostController } from '../controllers/post.controller';
-import { auth } from '../middlewares/auth.middleware';
+import { auth, authorizeUser } from '../middlewares/auth.middleware';
 
 const postRouter = Router();
 
-postRouter.get('/', PostController.getAllposts);
-postRouter.get('/:post_id', PostController.getPostById);
-postRouter.get('/:post_id/comments', PostController.getAllCommentsByPostId);
-postRouter.get('/:post_id/categories', PostController.getAllCategories);
-postRouter.get('/:post_id/likes', PostController.getAllLikes);
-
-postRouter.post('/:post_id/comments', auth, PostController.createComment);
+postRouter.get('/', authorizeUser, PostController.getAllposts);
 postRouter.post('/', auth, PostController.createPost);
-postRouter.post('/:post_id/like', auth, PostController.handleLikeDislike);
 
+postRouter.get('/my-posts', auth, PostController.getMyPosts);
+
+postRouter.get('/:post_id', authorizeUser, PostController.getPostById);
 postRouter.patch('/:post_id', auth, PostController.updatePost);
-
 postRouter.delete('/:post_id', auth, PostController.deletePost);
-postRouter.delete('/:post_id/like', auth, PostController.handleLikeDislike);
+
+postRouter.get(
+  '/:post_id/comments',
+  authorizeUser,
+  PostController.getAllCommentsByPostId,
+);
+postRouter.post('/:post_id/comments', auth, PostController.createComment);
+
+postRouter.post('/:post_id/like', auth, PostController.AddLikeDislike);
+postRouter.delete('/:post_id/like', auth, PostController.DeleteLikeDislike);
+
+postRouter.get(
+  '/:post_id/categories',
+  authorizeUser,
+  PostController.getAllCategories,
+);
+postRouter.get('/:post_id/likes', authorizeUser, PostController.getAllLikes);
+
+postRouter.get(
+  '/:post_id/categories',
+  authorizeUser,
+  PostController.getAllCategories,
+);
 
 export default postRouter;

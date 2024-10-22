@@ -4,6 +4,7 @@ import {
   InsertEvent,
   RemoveEvent,
   UpdateEvent,
+  DataSource,
 } from 'typeorm';
 import { Like } from '../entities/like.entity';
 import { Post } from '../entities/post.entity';
@@ -18,8 +19,9 @@ export class LikeSubscriber implements EntitySubscriberInterface<Like> {
   async afterInsert(event: InsertEvent<Like>) {
     if (event.entity?.post) {
       const postRepository = AppDataSource.getRepository(Post);
-      const post = await postRepository.findOneBy({ id: event.entity.post.id });
-
+      const post = await postRepository.findOne({
+        where: { id: event.entity.post.id },
+      });
       if (post) {
         switch (event.entity.type) {
           case 'like':
@@ -35,6 +37,7 @@ export class LikeSubscriber implements EntitySubscriberInterface<Like> {
   }
 
   async afterUpdate(event: UpdateEvent<Like>) {
+    console.log('LikeSubscriber: afterUpdate');
     if (event.entity?.post && event.databaseEntity) {
       const postRepository = AppDataSource.getRepository(Post);
       const post = await postRepository.findOneBy({ id: event.entity.post.id });
@@ -67,6 +70,7 @@ export class LikeSubscriber implements EntitySubscriberInterface<Like> {
   }
 
   async afterRemove(event: RemoveEvent<Like>) {
+    console.log('LikeSubscriber: afterRemove');
     if (event.entity?.post) {
       const postRepository = AppDataSource.getRepository(Post);
       const post = await postRepository.findOneBy({ id: event.entity.post.id });
