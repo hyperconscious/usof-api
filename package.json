@@ -7,7 +7,7 @@
         "build": "tsc",
         "start": "nodemon",
         "typeorm": "ts-node ./node_modules/typeorm/cli.js",
-        "typeorm:cli": "ts-node ./node_modules/typeorm/cli -d src/config/orm.config.ts",
+        "typeorm:cli": "ts-node ./node_modules/typeorm/cli.js -d src/config/orm.config.ts",
         "db:drop": "npm run typeorm:cli schema:drop",
         "migration:generate": "npm run typeorm:cli migration:generate -n",
         "db:migrate": "npm run typeorm:cli migration:run",
@@ -34,6 +34,7 @@
         "mysql2": "^3.11.3",
         "nodemailer": "^6.9.15",
         "reflect-metadata": "^0.2.2",
+        "tsconfig-paths": "^4.2.0",
         "typeorm": "^0.3.20"
     },
     "devDependencies": {

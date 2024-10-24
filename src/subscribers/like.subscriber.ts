@@ -4,7 +4,6 @@ import {
   InsertEvent,
   RemoveEvent,
   UpdateEvent,
-  DataSource,
 } from 'typeorm';
 import { Like } from '../entities/like.entity';
 import { Post } from '../entities/post.entity';
@@ -25,10 +24,10 @@ export class LikeSubscriber implements EntitySubscriberInterface<Like> {
       if (post) {
         switch (event.entity.type) {
           case 'like':
-            post.likes += 1;
+            post.likesCount += 1;
             break;
           case 'dislike':
-            post.dislikes += 1;
+            post.dislikesCount += 1;
             break;
         }
         await postRepository.save(post);
@@ -49,18 +48,18 @@ export class LikeSubscriber implements EntitySubscriberInterface<Like> {
         if (oldType !== newType) {
           switch (oldType) {
             case 'like':
-              post.likes -= 1;
+              post.likesCount -= 1;
               break;
             case 'dislike':
-              post.dislikes -= 1;
+              post.dislikesCount -= 1;
               break;
           }
           switch (newType) {
             case 'like':
-              post.likes += 1;
+              post.likesCount += 1;
               break;
             case 'dislike':
-              post.dislikes += 1;
+              post.dislikesCount += 1;
               break;
           }
           await postRepository.save(post);
@@ -78,10 +77,10 @@ export class LikeSubscriber implements EntitySubscriberInterface<Like> {
       if (post) {
         switch (event.entity.type) {
           case 'like':
-            post.likes -= 1;
+            post.likesCount -= 1;
             break;
           case 'dislike':
-            post.dislikes -= 1;
+            post.dislikesCount -= 1;
             break;
         }
         await postRepository.save(post);

@@ -28,21 +28,21 @@ export class Logger {
 
     switch (level) {
       case LogEnum.INFO:
-        console.log(
+        console.info(
           color.green(
             color`{cyan [${timestamp}]} [${level}] {cyan [${this.context}]}: ${message}`,
           ),
         );
         break;
       case LogEnum.WARNING:
-        console.log(
+        console.warn(
           color.yellow(
             color`{cyan [${timestamp}]} [${level}] {cyan [${this.context}]}: ${message}`,
           ),
         );
         break;
       case LogEnum.ERROR:
-        console.log(
+        console.error(
           color.red(
             color`{cyan [${timestamp}]} [${level}] {cyan [${this.context}]}: ${message}`,
           ),

@@ -2,15 +2,18 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { IsNotEmpty, Length } from 'class-validator';
 import { Category } from './category.entity';
-import { ForeignKeyMetadata } from 'typeorm/metadata/ForeignKeyMetadata';
+import { Like } from './like.entity';
+import { Comment } from './comment.entity';
 
 export enum PostStatus {
   active = 'active',
@@ -23,6 +26,7 @@ export class Post {
   id!: number;
 
   @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'user_id' })
   @IsNotEmpty({ message: 'Author is required' })
   author!: User;
 
@@ -46,13 +50,22 @@ export class Post {
   @IsNotEmpty({ message: 'Content is required' })
   content!: string;
 
-  @ManyToMany(() => Category, { eager: true })
+  @ManyToMany(() => Category, { eager: true, cascade: true })
   @JoinTable()
   categories!: Category[];
 
-  @Column({ default: 0 })
-  likes!: number;
+  @OneToMany(() => Like, like => like.post)
+  likes!: Like[];
 
-  @Column({ default: 0 })
-  dislikes!: number;
+  @Column({ default: 0, name: 'likes_count' })
+  likesCount!: number;
+
+  @Column({ default: 0, name: 'dislikes_count' })
+  dislikesCount!: number;
+
+  @OneToMany(() => Comment, comment => comment.post, { eager: true })
+  comments!: Comment[];
+
+  @Column({ default: 0, name: 'comments_count' })
+  commentsCount!: number;
 }

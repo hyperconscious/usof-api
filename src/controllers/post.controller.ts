@@ -22,7 +22,7 @@ export class PostController {
 
   public static async getAllposts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
-    queryOptions.sortField = queryOptions.sortField || 'likes';
+    queryOptions.sortField = queryOptions.sortField || 'likes_count';
     if (req.user?.role !== UserRole.Admin) {
       queryOptions.filters = {
         ...queryOptions.filters,
@@ -35,7 +35,7 @@ export class PostController {
 
   public static async getMyPosts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
-    queryOptions.sortField = queryOptions.sortField || 'likes';
+    queryOptions.sortField = queryOptions.sortField || 'likes_count';
     queryOptions.filters = {
       ...queryOptions.filters,
       postAuthor: { id: req.user?.id! },

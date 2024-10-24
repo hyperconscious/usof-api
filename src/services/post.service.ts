@@ -147,7 +147,7 @@ export class PostService {
     return post.categories;
   }
 
-  public async getAllLikes(postId: number): Promise<Number> {
+  public async getAllLikes(postId: number): Promise<Like[]> {
     const post = await this.getPostById(postId);
     return post.likes;
   }
@@ -158,33 +158,31 @@ export class PostService {
     type: 'like' | 'dislike',
   ): Promise<Like> {
     const post = await this.getPostById(postId);
-    const author = await this.UserService.getUserById(userId);
+    const user = await this.UserService.getUserById(userId);
     const existingLike = await this.likeRepository.findOneBy({
       post: { id: postId },
-      author: { id: userId },
+      user: { id: userId },
       type,
     });
     if (existingLike !== null) {
-      throw new BadRequestError('You have already liked/disliked this post');
+      throw new BadRequestError(`You have already ${type}d this post`);
     }
     const oppositeType = type === 'like' ? 'dislike' : 'like';
     const oppositeLike = await this.likeRepository.findOneBy({
       post: { id: postId },
-      author: { id: userId },
+      user: { id: userId },
       type: oppositeType,
     });
     if (oppositeLike) {
-      throw new BadRequestError('You have already liked/disliked this post');
+      this.DeleteLikeDislike(postId, userId, oppositeType);
     }
     const newLike = this.likeRepository.create({
       post,
-      author,
+      user,
       entityType: 'post',
       type,
     });
     await this.likeRepository.save(newLike);
-    post.likes += 1;
-    await this.postRepository.save(post);
     return newLike;
   }
 
@@ -197,28 +195,15 @@ export class PostService {
     const author = await this.UserService.getUserById(userId);
     const existingLike = await this.likeRepository.findOneBy({
       post: { id: postId },
-      author: { id: userId },
+      user: { id: userId },
       type,
     });
     if (existingLike !== null) {
       this.likeRepository.remove(existingLike);
-      post.likes -= 1;
-      await this.postRepository.save(post);
       return existingLike;
     }
-    const oppositeType = type === 'like' ? 'dislike' : 'like';
-    const oppositeLike = await this.likeRepository.findOneBy({
-      post: { id: postId },
-      author: { id: userId },
-      type: oppositeType,
-    });
-    if (oppositeLike) {
-      await this.likeRepository.remove(oppositeLike);
-      post.dislikes -= 1;
-      await this.postRepository.save(post);
-      return oppositeLike;
-    }
-    throw new BadRequestError('You have not liked/disliked this post');
+
+    throw new BadRequestError(`You have not ${type}d this post`);
   }
 }
 

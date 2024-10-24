@@ -40,8 +40,11 @@ export class User {
   @Column({ default: '' })
   avatar!: string;
 
-  @Column({ default: 0 })
-  rating!: number;
+  @Column({ default: 0, name: 'publisher_rating' })
+  publisherRating!: number;
+
+  @Column({ default: 0, name: 'commentator_rating' })
+  commentatorRating!: number;
 
   @Column({
     type: 'enum',
