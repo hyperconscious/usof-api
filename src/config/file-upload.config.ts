@@ -4,7 +4,10 @@ import { BadRequestError } from '../utils/http-errors';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/avatars/');
+    const uploadFolder = req.originalUrl.includes('/posts')
+      ? 'uploads/posts/'
+      : 'uploads/avatars/';
+    cb(null, uploadFolder);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -23,8 +26,11 @@ const fileFilter = (req: any, file: any, cb: any) => {
   cb(null, true);
 };
 
-export const upload = multer({
+const upload = multer({
   storage: storage,
   limits: { fileSize: 1024 * 1024 * 1 },
   fileFilter: fileFilter,
 });
+
+export const uploadSingle = upload.single('avatar');
+export const uploadMultiple = upload.array('images', 5);

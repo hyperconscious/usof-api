@@ -17,6 +17,10 @@ export const createPostDto = Joi.object({
     'any.required': 'Content is required.',
   }),
 
+  images: Joi.array().optional().messages({
+    'array.base': 'Images must be an array.',
+  }),
+
   categories: Joi.array()
     .items(
       Joi.object({
@@ -72,6 +76,10 @@ export const updatePostDto = Joi.object({
     'string.base': 'Content must be a string.',
     'string.empty': 'Content cannot be empty.',
     'string.min': 'Content must be at least 10 characters long.',
+  }),
+
+  images: Joi.array().optional().messages({
+    'array.base': 'Images must be an array.',
   }),
 
   categories: Joi.array()

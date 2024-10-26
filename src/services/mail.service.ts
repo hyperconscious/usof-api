@@ -1,5 +1,7 @@
 import * as nodemailer from 'nodemailer';
 import config from '../config/env.config';
+import verificationTemplate from '../templates/verificationTemplate';
+import passwordResetTemplate from '../templates/passwordResetTemplate';
 
 export class MailService {
   public async sendVerificationEmail(email: string, token: string) {
@@ -20,7 +22,7 @@ export class MailService {
       to: email,
       subject: 'Email Verification',
       text: `Please verify your email by clicking this link: ${verificationLink}`,
-      html: `<p>Please verify your email by clicking <a href="${verificationLink}">this link</a>.</p>`,
+      html: verificationTemplate(verificationLink),
     };
 
     await transporter.sendMail(mailOptions);
@@ -43,8 +45,8 @@ export class MailService {
       from: '"Usof" <nikonov.kirill@gmail.com>',
       to: email,
       subject: 'Reset Password',
-      // text: `You can reset your password by folowing this link: ${resetLink}`,
-      html: `<p>You can reset your password by following <a href="${resetLink}">this link</a>.</p>`,
+      text: `You can reset your password by folowing this link: ${resetLink}`,
+      html: passwordResetTemplate(resetLink),
     };
 
     await transporter.sendMail(mailOptions);

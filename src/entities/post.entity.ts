@@ -50,6 +50,9 @@ export class Post {
   @IsNotEmpty({ message: 'Content is required' })
   content!: string;
 
+  @Column('simple-array', { nullable: true })
+  images!: string[];
+
   @ManyToMany(() => Category, { eager: true, cascade: true })
   @JoinTable()
   categories!: Category[];

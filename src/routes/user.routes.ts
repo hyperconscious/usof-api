@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { UserController } from '../controllers/user.controller';
-import { upload } from '../config/file-upload.config';
+import { uploadSingle } from '../config/file-upload.config';
 import { auth, authorizeRole } from '../middlewares/auth.middleware';
 import { UserRole } from '../entities/user.entity';
 const userRouter = Router();
@@ -20,12 +20,7 @@ userRouter.post(
 
 userRouter.patch('/:user_id', auth, UserController.updateUser);
 
-userRouter.patch(
-  '/avatar',
-  auth,
-  upload.single('avatar'),
-  UserController.uploadAvatar,
-);
+userRouter.patch('/avatar', auth, uploadSingle, UserController.uploadAvatar);
 
 userRouter.delete('/:user_id', auth, UserController.deleteUser);
 

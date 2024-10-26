@@ -4,7 +4,8 @@ dist
 .git
 .gitignore
 Dockerfile
-
+docker-compose.yml
 uploads/avatars/*
+uploads/posts/*
 
 *.tsbuildinfo

@@ -148,6 +148,11 @@ export class PostController {
   }
 
   public static async createPost(req: Request, res: Response) {
+    if (req.files) {
+      req.body.images = (req.files as Express.Multer.File[]).map(
+        (file) => file.path,
+      );
+    }
     const post = await PostController.postService.createPost({
       ...req.body,
       author: { id: req.user?.id! },
@@ -181,6 +186,11 @@ export class PostController {
     const post = await PostController.postService.getPostById(postId);
     if (post.author.id !== userId && req.user?.role! !== UserRole.Admin) {
       throw new ForbiddenError('You are not authorized to update this post.');
+    }
+    if (req.files) {
+      req.body.images = (req.files as Express.Multer.File[]).map(
+        (file) => file.path,
+      );
     }
     const updatedPost = await PostController.postService.updatePost(
       postId,

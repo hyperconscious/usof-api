@@ -4,6 +4,7 @@ build
 .env
 
 uploads/avatars/*
+uploads/posts/*
 
 # docker-compose.override.yml
 # .dockerignore
