@@ -39,8 +39,6 @@ export const createUserDto = Joi.object({
 
   avatar: Joi.string().optional().allow(null, ''),
 
-  rating: Joi.number().integer().min(0).default(0),
-
   role: Joi.string().valid('admin', 'user').default('user').messages({
     'any.only': 'Role must be either admin or user.',
   }),
@@ -78,8 +76,6 @@ export const updateUserDto = Joi.object({
   verified: Joi.boolean().default(false),
 
   avatar: Joi.string().optional().allow(null, ''),
-
-  rating: Joi.number().integer().min(0).default(0),
 
   role: Joi.string().valid('admin', 'user').default('user').messages({
     'any.only': 'Role must be either admin or user.',

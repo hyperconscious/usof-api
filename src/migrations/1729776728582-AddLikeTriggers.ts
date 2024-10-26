@@ -1,10 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddLikeTriggers1729776728582 implements MigrationInterface {
-    name = 'AddLikeTriggers1729776728582'
+  name = 'AddLikeTriggers1729776728582';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TRIGGER \`after_like_insert\` AFTER INSERT ON \`like\` FOR EACH ROW
             BEGIN
                 IF NEW.type = 'like' THEN
@@ -24,7 +24,7 @@ export class AddLikeTriggers1729776728582 implements MigrationInterface {
             END;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TRIGGER \`after_like_delete\` AFTER DELETE ON \`like\` FOR EACH ROW
             BEGIN
                 IF OLD.type = 'like' THEN
@@ -43,11 +43,10 @@ export class AddLikeTriggers1729776728582 implements MigrationInterface {
                 CALL update_rating(OLD.user_id, OLD.entity_type);
             END;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TRIGGER IF EXISTS \`after_like_insert\``);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS \`after_like_delete\``);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TRIGGER IF EXISTS \`after_like_insert\``);
+    await queryRunner.query(`DROP TRIGGER IF EXISTS \`after_like_delete\``);
+  }
 }

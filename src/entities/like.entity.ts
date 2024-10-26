@@ -30,11 +30,17 @@ export class Like {
   @Column({ default: 'post', name: 'entity_type' })
   entityType!: 'post' | 'comment';
 
-  @ManyToOne(() => Post, post => post.likes, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Post, (post) => post.likes, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'post_id' })
   post?: Post;
 
-  @ManyToOne(() => Comment, comment => comment.likes, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Comment, (comment) => comment.likes, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'comment_id' })
   comment?: Comment;
 

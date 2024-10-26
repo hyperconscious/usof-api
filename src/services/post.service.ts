@@ -8,9 +8,8 @@ import { createPostDto, updatePostDto } from '../dto/post.dto';
 import { ServiceMethod, UserService } from './user.service';
 import { Paginator } from '../utils/paginator';
 import { QueryOptions } from '../dto/query-options.dto';
-import { CreateCommentDto } from '../dto/comment.dto';
+import { createCommentDto } from '../dto/comment.dto';
 import { Like } from '../entities/like.entity';
-import { auth } from '../middlewares/auth.middleware';
 
 export class PostService {
   private postRepository: Repository<Post>;
@@ -44,7 +43,7 @@ export class PostService {
   }
 
   private validateCommentDTO(commentData: Partial<Comment>): Comment {
-    const { error, value: Comment } = CreateCommentDto.validate(commentData, {
+    const { error, value: Comment } = createCommentDto.validate(commentData, {
       abortEarly: false,
     });
     if (error) {
@@ -132,6 +131,9 @@ export class PostService {
     commentData: Partial<Comment>,
   ): Promise<Comment> {
     const post = await this.getPostById(postId);
+    if (post.status !== 'active') {
+      throw new BadRequestError('You can not comment on inactive post');
+    }
     const author = await this.UserService.getUserById(authorId);
     const comment = this.validateCommentDTO(commentData);
     const newComment = this.commentRepository.create({
@@ -147,9 +149,14 @@ export class PostService {
     return post.categories;
   }
 
-  public async getAllLikes(postId: number): Promise<Like[]> {
+  public async getAllLikes(postId: number): Promise<Number> {
     const post = await this.getPostById(postId);
-    return post.likes;
+    return post.likesCount;
+  }
+
+  public async getAllDislikes(postId: number): Promise<Number> {
+    const post = await this.getPostById(postId);
+    return post.dislikesCount;
   }
 
   public async AddLikeDislike(

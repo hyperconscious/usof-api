@@ -19,7 +19,7 @@ export interface QueryOptions {
   filters?: Filters;
 }
 
-export const QueryOptionsDto = Joi.object({
+export const queryOptionsDto = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   sortField: Joi.string().optional(),
@@ -32,6 +32,7 @@ export const QueryOptionsDto = Joi.object({
       )
       .optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
+    categoryId: Joi.number().integer().min(1).optional(),
     postAuthor: Joi.object({
       id: Joi.number().integer().min(1).required(),
     }).optional(),

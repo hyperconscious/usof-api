@@ -4,7 +4,7 @@ import { auth, authorizeUser } from '../middlewares/auth.middleware';
 
 const postRouter = Router();
 
-postRouter.get('/', authorizeUser, PostController.getAllposts);
+postRouter.get('/', authorizeUser, PostController.getAllPosts);
 postRouter.post('/', auth, PostController.createPost);
 
 postRouter.get('/my-posts', auth, PostController.getMyPosts);
@@ -29,6 +29,11 @@ postRouter.get(
   PostController.getAllCategories,
 );
 postRouter.get('/:post_id/likes', authorizeUser, PostController.getAllLikes);
+postRouter.get(
+  '/:post_id/dislikes',
+  authorizeUser,
+  PostController.getAllDislikes,
+);
 
 postRouter.get(
   '/:post_id/categories',

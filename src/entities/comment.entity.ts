@@ -28,7 +28,7 @@ export class Comment {
   @IsNotEmpty({ message: 'Content is required' })
   content!: string;
 
-  @OneToMany(() => Like, like => like.comment)
+  @OneToMany(() => Like, (like) => like.comment)
   likes!: Like[];
 
   @Column({ default: 0, name: 'likes_count' })
@@ -37,7 +37,7 @@ export class Comment {
   @Column({ default: 0, name: 'dislikes_count' })
   dislikesCount!: number;
 
-  @ManyToOne(() => Post, post => post.comments)
+  @ManyToOne(() => Post, (post) => post.comments)
   @JoinColumn({ name: 'post_id' })
   @IsNotEmpty({ message: 'Comment needed to be under post.' })
   post!: Post;

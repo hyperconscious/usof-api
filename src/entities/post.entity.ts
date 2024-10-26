@@ -54,7 +54,7 @@ export class Post {
   @JoinTable()
   categories!: Category[];
 
-  @OneToMany(() => Like, like => like.post)
+  @OneToMany(() => Like, (like) => like.post)
   likes!: Like[];
 
   @Column({ default: 0, name: 'likes_count' })
@@ -63,7 +63,7 @@ export class Post {
   @Column({ default: 0, name: 'dislikes_count' })
   dislikesCount!: number;
 
-  @OneToMany(() => Comment, comment => comment.post, { eager: true })
+  @OneToMany(() => Comment, (comment) => comment.post, { eager: true })
   comments!: Comment[];
 
   @Column({ default: 0, name: 'comments_count' })

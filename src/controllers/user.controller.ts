@@ -7,14 +7,17 @@ import {
 } from '../utils/http-errors';
 import { StatusCodes } from 'http-status-codes';
 import { UserRole } from '../entities/user.entity';
-import { QueryOptions } from '../utils/paginator';
-import { QueryOptionsDto } from '../dto/query-options.dto';
+import { queryOptionsDto, QueryOptions } from '../dto/query-options.dto';
+import { JWTService } from '../services/jwt.service';
+import { MailService } from '../services/mail.service';
 
 export class UserController {
+  private static jwtService = new JWTService();
+  private static mailService = new MailService();
   private static userService = new UserService();
 
   private static validateQueryDto(req: Request): QueryOptions {
-    const { error, value: queryOptions } = QueryOptionsDto.validate(req.query, {
+    const { error, value: queryOptions } = queryOptionsDto.validate(req.query, {
       abortEarly: false,
     });
     if (error) {
@@ -73,6 +76,34 @@ export class UserController {
       userId !== parseInt(req.params.user_id, 10)
     ) {
       throw new ForbiddenError('You are not authorized to update this user.');
+    }
+
+    if (userData.UserRole && req.user?.role !== UserRole.Admin) {
+      throw new ForbiddenError('You are not authorized to update this user.');
+    }
+
+    if (userData.email) {
+      const user = await UserController.userService.getUserByEmail(
+        userData.email,
+      );
+      if (user && user.id !== userId) {
+        throw new BadRequestError('Email already exists.');
+      } else {
+        const mailToken = UserController.jwtService.generateEmailToken(user);
+        await UserController.mailService.sendVerificationEmail(
+          user.email,
+          mailToken,
+        );
+      }
+    }
+
+    if (userData.login) {
+      const user = await UserController.userService.getUserByLogin(
+        userData.login,
+      );
+      if (user && user.id !== userId) {
+        throw new BadRequestError('Login already exists.');
+      }
     }
 
     const updatedUser = await UserController.userService.updateUser(

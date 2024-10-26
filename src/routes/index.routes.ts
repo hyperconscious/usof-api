@@ -3,6 +3,8 @@ import { StatusCodes } from 'http-status-codes';
 import userRouter from './user.routes';
 import authRouter from './auth.routes';
 import postRouter from './post.routes';
+import categoryRouter from './category.routes';
+import commentRouter from './comment.routes';
 
 const router = Router();
 
@@ -15,5 +17,7 @@ router.get('/', (req: Request, res: Response) => {
 router.use('/users', userRouter);
 router.use('/auth', authRouter);
 router.use('/posts', postRouter);
+router.use('/categories', categoryRouter);
+router.use('/comments', commentRouter);
 
 export { router };

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { QueryOptions, QueryOptionsDto } from '../dto/query-options.dto';
+import { QueryOptions, queryOptionsDto } from '../dto/query-options.dto';
 import { PostService } from '../services/post.service';
 import { BadRequestError, ForbiddenError } from '../utils/http-errors';
 import { StatusCodes } from 'http-status-codes';
@@ -9,7 +9,7 @@ export class PostController {
   private static postService = new PostService();
 
   private static validateQueryDto(req: Request): QueryOptions {
-    const { error, value: queryOptions } = QueryOptionsDto.validate(req.query, {
+    const { error, value: queryOptions } = queryOptionsDto.validate(req.query, {
       abortEarly: false,
     });
     if (error) {
@@ -20,7 +20,7 @@ export class PostController {
     return queryOptions;
   }
 
-  public static async getAllposts(req: Request, res: Response) {
+  public static async getAllPosts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
     queryOptions.sortField = queryOptions.sortField || 'likes_count';
     if (req.user?.role !== UserRole.Admin) {
@@ -107,7 +107,7 @@ export class PostController {
       post.author.id !== req.user?.id
     ) {
       throw new ForbiddenError(
-        'You are not authorized to create comment on this post.',
+        'You are not authorized to see this post categories.',
       );
     }
     const categories =
@@ -124,10 +124,26 @@ export class PostController {
       post.author.id !== req.user?.id
     ) {
       throw new ForbiddenError(
-        'You are not authorized to create comment on this post.',
+        'You are not authorized to see this post likes.',
       );
     }
     const likes = await PostController.postService.getAllLikes(postId);
+    return res.status(StatusCodes.OK).json(likes);
+  }
+
+  public static async getAllDislikes(req: Request, res: Response) {
+    const postId = parseInt(req.params.post_id, 10);
+    const post = await PostController.postService.getPostById(postId);
+    if (
+      post.status !== 'active' &&
+      req.user?.role !== UserRole.Admin &&
+      post.author.id !== req.user?.id
+    ) {
+      throw new ForbiddenError(
+        'You are not authorized to see this post dislikes.',
+      );
+    }
+    const likes = await PostController.postService.getAllDislikes(postId);
     return res.status(StatusCodes.OK).json(likes);
   }
 

@@ -94,6 +94,14 @@ export class UserService {
     return user;
   }
 
+  public async getUserByLogin(login: string): Promise<User> {
+    const user = await this.userRepository.findOneBy({ login });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    return user;
+  }
+
   public async getAllUsers(
     queryOptions: QueryOptions,
   ): Promise<{ data: User[]; total: number }> {

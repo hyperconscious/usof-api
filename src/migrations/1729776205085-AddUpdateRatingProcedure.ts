@@ -1,10 +1,12 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddUpdateRatingProcedure1729776205085 implements MigrationInterface {
-    name = 'AddUpdateRatingProcedure1729776205085'
+export class AddUpdateRatingProcedure1729776205085
+  implements MigrationInterface
+{
+  name = 'AddUpdateRatingProcedure1729776205085';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE PROCEDURE update_rating(
                 user_id INT,
                 rating_type ENUM('post', 'comment')
@@ -40,12 +42,11 @@ export class AddUpdateRatingProcedure1729776205085 implements MigrationInterface
                 END IF;
             END;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DROP PROCEDURE IF EXISTS update_rating;
         `);
-    }
-
+  }
 }

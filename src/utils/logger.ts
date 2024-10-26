@@ -4,6 +4,7 @@ export enum LogEnum {
   INFO = 'INFO',
   WARNING = 'WARNING',
   ERROR = 'ERROR',
+  DEBUG = 'DEBUG',
 }
 
 export class Logger {
@@ -48,6 +49,13 @@ export class Logger {
           ),
         );
         break;
+      case LogEnum.DEBUG:
+        console.debug(
+          color.blue(
+            color`{cyan [${timestamp}]} [${level}] {cyan [${this.context}]}: ${message}`,
+          ),
+        );
+        break;
     }
   }
 
@@ -61,6 +69,10 @@ export class Logger {
 
   public error(message: string): void {
     this.log(LogEnum.ERROR, message);
+  }
+
+  public debug(message: string): void {
+    this.log(LogEnum.DEBUG, message);
   }
 }
 
