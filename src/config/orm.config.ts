@@ -8,9 +8,9 @@ export const AppDataSource = new DataSource({
   username: config.database.user,
   password: config.database.pass,
   database: config.database.name,
-  entities: [__dirname + '/../entities/*.ts'],
-  // subscribers: ['src/subscribers/*.ts'], // just freezing when updating post
-  migrations: [__dirname + '/../migrations/**/*.ts'],
+  entities: ['src/entities/*.ts'],
+  // subscribers: [__dirname + '/../subscribers/*.ts'], // just freezing when updating post
+  migrations: ['src/migrations/*.ts'],
   synchronize: false, //config.env === 'development',
   logging: config.env === 'development',
 });

@@ -51,6 +51,17 @@ export class CommentController {
     if (!commentId) {
       throw new BadRequestError('Comment Id is required');
     }
+    const comment =
+      await CommentController.CommentService.getCommentById(commentId);
+    const post = await postService.getPostById(comment.post.id);
+    if (
+      (post.status === 'locked' || post.status !== 'active') &&
+      req.user?.role !== UserRole.Admin
+    ) {
+      throw new ForbiddenError(
+        'Post is locked. You are not authorized to like/dislike this comment.',
+      );
+    }
     const like = await CommentController.CommentService.AddLikeDislike(
       commentId,
       req.user?.id!,
@@ -72,6 +83,15 @@ export class CommentController {
     ) {
       throw new ForbiddenError(
         'You are not authorized to update this comment.',
+      );
+    }
+    const post = await postService.getPostById(comment.post.id);
+    if (
+      (post.status === 'locked' || post.status !== 'active') &&
+      req.user?.role !== UserRole.Admin
+    ) {
+      throw new ForbiddenError(
+        'Post is locked. You are not authorized to like/dislike this comment.',
       );
     }
     const updatedComment = await CommentController.CommentService.updateComment(
@@ -96,6 +116,15 @@ export class CommentController {
         'You are not authorized to delete this comment.',
       );
     }
+    const post = await postService.getPostById(comment.post.id);
+    if (
+      (post.status === 'locked' || post.status !== 'active') &&
+      req.user?.role !== UserRole.Admin
+    ) {
+      throw new ForbiddenError(
+        'Post is locked. You are not authorized to like/dislike this comment.',
+      );
+    }
     await CommentController.CommentService.deleteComment(commentId);
     return res.status(StatusCodes.NO_CONTENT).send();
   }
@@ -104,6 +133,17 @@ export class CommentController {
     const commentId = parseInt(req.params.comment_id, 10);
     if (!commentId) {
       throw new BadRequestError('Comment Id is required');
+    }
+    const comment =
+      await CommentController.CommentService.getCommentById(commentId);
+    const post = await postService.getPostById(comment.post.id);
+    if (
+      (post.status === 'locked' || post.status !== 'active') &&
+      req.user?.role !== UserRole.Admin
+    ) {
+      throw new ForbiddenError(
+        'Post is locked. You are not authorized to like/dislike this comment.',
+      );
     }
     const like = await CommentController.CommentService.DeleteLikeDislike(
       commentId,

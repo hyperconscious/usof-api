@@ -5,6 +5,7 @@ import authRouter from './auth.routes';
 import postRouter from './post.routes';
 import categoryRouter from './category.routes';
 import commentRouter from './comment.routes';
+import favouriteRouter from './favourite.routes';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/auth', authRouter);
 router.use('/posts', postRouter);
 router.use('/categories', categoryRouter);
 router.use('/comments', commentRouter);
+router.use('/favourites', favouriteRouter);
 
 export { router };

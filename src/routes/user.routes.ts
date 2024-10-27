@@ -7,10 +7,6 @@ const userRouter = Router();
 
 userRouter.get('/', auth, UserController.getAllUsers);
 
-userRouter.get('/my-profile', auth, UserController.getUserById);
-
-userRouter.get('/:user_id', auth, UserController.getUserById);
-
 userRouter.post(
   '/',
   auth,
@@ -18,9 +14,12 @@ userRouter.post(
   UserController.createUser,
 );
 
-userRouter.patch('/:user_id', auth, UserController.updateUser);
-
+userRouter.get('/my-profile', auth, UserController.getUserById);
 userRouter.patch('/avatar', auth, uploadSingle, UserController.uploadAvatar);
+
+userRouter.get('/:user_id', auth, UserController.getUserById);
+
+userRouter.patch('/:user_id', auth, UserController.updateUser);
 
 userRouter.delete('/:user_id', auth, UserController.deleteUser);
 

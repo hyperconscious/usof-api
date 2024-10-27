@@ -18,6 +18,7 @@ import { Comment } from './comment.entity';
 export enum PostStatus {
   active = 'active',
   inactive = 'inactive',
+  locked = 'locked',
 }
 
 @Entity()

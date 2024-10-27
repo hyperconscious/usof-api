@@ -54,6 +54,10 @@ export class AuthController {
       throw new BadRequestError('Invalid login or password.');
     }
 
+    if (!user.verified) {
+      throw new UnauthorizedError('Email is not verified.');
+    }
+
     const accessToken = AuthController.jwtService.generateAccessToken(user);
     const refreshToken = AuthController.jwtService.generateRefreshToken(user);
 

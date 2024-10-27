@@ -5,10 +5,13 @@ export interface AuthorFilter {
 }
 
 export interface Filters {
-  categories?: string | string[];
   postId?: number;
   status?: 'active' | 'inactive';
   postAuthor?: AuthorFilter;
+  categoryId?: number;
+  categories?: string;
+  dateRange?: string;
+  search?: string;
 }
 
 export interface QueryOptions {
@@ -17,6 +20,7 @@ export interface QueryOptions {
   sortField?: string;
   sortDirection?: 'ASC' | 'DESC';
   filters?: Filters;
+  search?: string;
 }
 
 export const queryOptionsDto = Joi.object({
@@ -25,16 +29,13 @@ export const queryOptionsDto = Joi.object({
   sortField: Joi.string().optional(),
   sortDirection: Joi.string().uppercase().valid('ASC', 'DESC').default('ASC'),
   filters: Joi.object({
-    categories: Joi.alternatives()
-      .try(
-        Joi.string().pattern(/^[a-zA-Z0-9,]+$/),
-        Joi.array().items(Joi.string().alphanum()),
-      )
-      .optional(),
-    status: Joi.string().valid('active', 'inactive').optional(),
+    categories: Joi.string().optional(),
+    dateRange: Joi.string().optional(),
+    status: Joi.string().valid('active', 'inactive', 'locked').optional(),
     categoryId: Joi.number().integer().min(1).optional(),
     postAuthor: Joi.object({
       id: Joi.number().integer().min(1).required(),
     }).optional(),
   }).optional(),
+  search: Joi.string().min(3).optional(),
 });

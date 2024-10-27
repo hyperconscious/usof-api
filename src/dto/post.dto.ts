@@ -45,10 +45,13 @@ export const createPostDto = Joi.object({
       'array.min': 'At least one category is required.',
     }),
 
-  status: Joi.string().valid('active', 'inactive').default('active').messages({
-    'string.base': 'Status must be a string.',
-    'any.only': 'Status must be either active or inactive.',
-  }),
+  status: Joi.string()
+    .valid('active', 'inactive', 'locked')
+    .default('active')
+    .messages({
+      'string.base': 'Status must be a string.',
+      'any.only': 'Status must be either active or inactive.',
+    }),
 
   author: Joi.object({
     id: Joi.number().required().messages({
@@ -106,10 +109,13 @@ export const updatePostDto = Joi.object({
       'array.min': 'At least one category is required.',
     }),
 
-  status: Joi.string().valid('active', 'inactive').optional().messages({
-    'string.base': 'Status must be a string.',
-    'any.only': 'Status must be either active or inactive.',
-  }),
+  status: Joi.string()
+    .valid('active', 'inactive', 'locked')
+    .optional()
+    .messages({
+      'string.base': 'Status must be a string.',
+      'any.only': 'Status must be either active or inactive.',
+    }),
 
   publishDate: Joi.date().optional().messages({
     'date.base': 'Publish date must be a valid date.',

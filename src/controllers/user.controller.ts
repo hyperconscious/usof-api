@@ -122,13 +122,6 @@ export class UserController {
       throw new UnauthorizedError('You need to be logged in.');
     }
 
-    if (
-      req.user?.role !== UserRole.Admin &&
-      userId !== parseInt(req.params.user_id, 10)
-    ) {
-      throw new ForbiddenError('You are not authorized to update this user.');
-    }
-
     if (!req.file) {
       throw new BadRequestError('No file uploaded.');
     }

@@ -8,6 +8,7 @@ import { router as apiRoutes } from './routes/index.routes';
 import { databaseService } from './services/database.service';
 import { errorMiddleware } from './middlewares/error-handle.middleware';
 import { NotFoundError } from './utils/http-errors';
+import path from 'path';
 
 class UsofServer {
   private app: express.Application;
@@ -21,6 +22,8 @@ class UsofServer {
   }
 
   private configureMiddleware(): void {
+    const uploadsPath = path.resolve(__dirname, '../uploads');
+    this.app.use('/uploads', express.static(uploadsPath));
     this.app.use(cors());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));

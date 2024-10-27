@@ -76,14 +76,17 @@ export class PostService {
 
     const post = await this.getPostById(id);
 
-    const categories = await this.categoryRepository.findBy({
-      id: In(updatedPost.categories?.map((c) => c.id) || []),
-    });
+    if (updatedPost.categories) {
+      const categories = await this.categoryRepository.findBy({
+        id: In(updatedPost.categories?.map((c) => c.id) || []),
+      });
 
-    if (categories.length !== updatedPost.categories?.length) {
-      throw new BadRequestError('One or more categories are invalid.');
+      if (categories.length !== updatedPost.categories?.length) {
+        throw new BadRequestError('One or more categories are invalid.');
+      }
+      updatedPost.categories = categories;
+      post.categories = updatedPost.categories;
     }
-    updatedPost.categories = categories;
 
     const mergedPost = this.postRepository.merge(post, updatedPost);
     return await this.postRepository.save(mergedPost);
@@ -103,9 +106,22 @@ export class PostService {
     const queryBuilder = this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.author', 'author')
-      .leftJoinAndSelect('post.categories', 'categories');
+      .leftJoinAndSelect('post.categories', 'category');
+
     const paginator = new Paginator<Post>(queryOptions);
-    return await paginator.paginate(queryBuilder);
+    const result = paginator.paginate(queryBuilder);
+    const paginatedResult = await result;
+    const postIds = paginatedResult.data.map((post) => post.id);
+    const postsWithAllCategories = await this.postRepository.find({
+      where: { id: In(postIds) },
+      relations: ['categories'],
+    });
+    paginatedResult.data = paginatedResult.data.map((post) => ({
+      ...post,
+      categories:
+        postsWithAllCategories.find((p) => p.id === post.id)?.categories || [],
+    }));
+    return paginatedResult;
   }
 
   public async getAllCommentsByPostId(
