@@ -22,7 +22,8 @@ postRouter.get(
 postRouter.post('/:post_id/comments', auth, PostController.createComment);
 
 postRouter.post('/:post_id/like', auth, PostController.AddLikeDislike);
-postRouter.delete('/:post_id/like', auth, PostController.DeleteLikeDislike);
+postRouter.delete('/:post_id/like', auth, PostController.DeleteLike);
+postRouter.delete('/:post_id/dislike', auth, PostController.DeleteDislike);
 
 postRouter.get(
   '/:post_id/categories',

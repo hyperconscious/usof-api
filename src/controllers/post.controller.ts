@@ -23,6 +23,7 @@ export class PostController {
   public static async getAllPosts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
     queryOptions.sortField = queryOptions.sortField || 'likes_count';
+    queryOptions.isPost = true;
     if (req.user?.role !== UserRole.Admin) {
       queryOptions.filters = {
         ...queryOptions.filters,
@@ -36,6 +37,7 @@ export class PostController {
   public static async getMyPosts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
     queryOptions.sortField = queryOptions.sortField || 'likes_count';
+    queryOptions.isPost = true;
     queryOptions.filters = {
       ...queryOptions.filters,
       postAuthor: { id: req.user?.id! },
@@ -69,6 +71,12 @@ export class PostController {
       throw new ForbiddenError(
         'You are not authorized to view these comments.',
       );
+    }
+    if (req.user?.role !== UserRole.Admin) {
+      queryOptions.filters = {
+        ...queryOptions.filters,
+        status: 'active',
+      };
     }
     const comments = await PostController.postService.getAllCommentsByPostId(
       postId,
@@ -170,7 +178,16 @@ export class PostController {
     const post = await PostController.postService.getPostById(postId);
     if (post.status === 'locked' && req.user?.role !== UserRole.Admin) {
       throw new ForbiddenError(
-        'Post is locked. You are not authorized to create comment on this post.',
+        'Post is locked. You are not authorized to create like on this post.',
+      );
+    }
+    if (
+      post.status !== 'active' &&
+      req.user?.role !== UserRole.Admin &&
+      post.author.id !== req.user?.id
+    ) {
+      throw new ForbiddenError(
+        'You are not authorized to create comment on this post.',
       );
     }
     const like = await PostController.postService.AddLikeDislike(
@@ -181,20 +198,41 @@ export class PostController {
     return res.status(StatusCodes.OK).json({ data: like });
   }
 
-  public static async DeleteLikeDislike(req: Request, res: Response) {
+  private static async DeleteLikeDislike(
+    req: Request,
+    res: Response,
+    type: 'like' | 'dislike',
+  ) {
     const postId = parseInt(req.params.post_id, 10);
     const post = await PostController.postService.getPostById(postId);
     if (post.status === 'locked' && req.user?.role !== UserRole.Admin) {
       throw new ForbiddenError(
-        'Post is locked. You are not authorized to create comment on this post.',
+        'Post is locked. You are not authorized to delete like on this post.',
+      );
+    }
+    if (
+      post.status !== 'active' &&
+      req.user?.role !== UserRole.Admin &&
+      post.author.id !== req.user?.id
+    ) {
+      throw new ForbiddenError(
+        'You are not authorized to create comment on this post.',
       );
     }
     const like = await PostController.postService.DeleteLikeDislike(
       postId,
       req.user?.id!,
-      req.body.type,
+      type,
     );
     return res.status(StatusCodes.OK).json({ data: like });
+  }
+
+  public static async DeleteLike(req: Request, res: Response) {
+    return PostController.DeleteLikeDislike(req, res, 'like');
+  }
+
+  public static async DeleteDislike(req: Request, res: Response) {
+    return PostController.DeleteLikeDislike(req, res, 'dislike');
   }
 
   public static async updatePost(req: Request, res: Response) {

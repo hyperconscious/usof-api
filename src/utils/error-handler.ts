@@ -18,7 +18,7 @@ export class ErrorHandler {
       return res
         .status((err as any).statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
         .json({
-          status: 'error',
+          statusCode: (err as any).statusCode,
           method: req.method,
           message: err.message,
           path: config.env ? req.path : undefined,
@@ -29,7 +29,7 @@ export class ErrorHandler {
     if (err instanceof ValidationError) {
       const validationErrors = err.details.map((detail) => detail.message);
       return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-        status: 'fail',
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         method: req.method,
         message: 'Validation Error',
         path: config.env ? req.path : undefined,
@@ -39,7 +39,7 @@ export class ErrorHandler {
     ErrorHandler.logger.error(err.message);
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      status: 'error',
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       message: 'Internal Server Error',
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     });

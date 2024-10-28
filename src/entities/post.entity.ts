@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -39,6 +40,10 @@ export class Post {
   @Column()
   @CreateDateColumn({ type: 'timestamp' })
   publishDate!: Date;
+
+  @Column()
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedDate!: Date;
 
   @Column({
     type: 'enum',

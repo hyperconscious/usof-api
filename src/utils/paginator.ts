@@ -1,5 +1,4 @@
 import { Filters, QueryOptions } from '../dto/query-options.dto';
-
 export class Paginator<T> {
   private page: number;
   private limit: number;
@@ -7,6 +6,7 @@ export class Paginator<T> {
   private sortDirection: 'ASC' | 'DESC';
   private filters: Filters;
   private search: string;
+  private isPost: boolean;
 
   constructor(paginationOptions: QueryOptions) {
     this.page = paginationOptions.page || 1;
@@ -15,6 +15,7 @@ export class Paginator<T> {
     this.sortDirection = paginationOptions.sortDirection || 'ASC';
     this.filters = paginationOptions.filters || {};
     this.search = paginationOptions.search || '';
+    this.isPost = paginationOptions.isPost || false;
   }
 
   public async paginate(
@@ -59,12 +60,21 @@ export class Paginator<T> {
 
     if (this.search) {
       const searchTerm = this.search.toString();
-      queryBuilder.andWhere(
-        'post.title LIKE :searchTerm OR post.content LIKE :searchTerm',
-        {
-          searchTerm: `%${searchTerm}%`,
-        },
-      );
+      if (this.isPost) {
+        queryBuilder.andWhere(
+          'post.title LIKE :searchTerm OR post.content LIKE :searchTerm',
+          {
+            searchTerm: `%${searchTerm}%`,
+          },
+        );
+      } else {
+        queryBuilder.andWhere(
+          'user.login LIKE :searchTerm OR user.full_name LIKE :searchTerm',
+          {
+            searchTerm: `%${searchTerm}%`,
+          },
+        );
+      }
     }
 
     const total = await queryBuilder.getCount();

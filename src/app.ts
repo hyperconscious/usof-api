@@ -9,12 +9,14 @@ import { databaseService } from './services/database.service';
 import { errorMiddleware } from './middlewares/error-handle.middleware';
 import { NotFoundError } from './utils/http-errors';
 import path from 'path';
+import setupSwagger from './docs/swagger';
 
 class UsofServer {
   private app: express.Application;
 
   constructor() {
     this.app = express();
+    setupSwagger(this.app);
     this.configureMiddleware();
     this.configureRoutes();
     this.configureErrorHandling();

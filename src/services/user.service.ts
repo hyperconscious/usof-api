@@ -4,6 +4,10 @@ import { User } from '../entities/user.entity';
 import { AppDataSource } from '../config/orm.config';
 import { createUserDto, updateUserDto } from '../dto/user.dto';
 import { Paginator, QueryOptions } from '../utils/paginator';
+import { Like } from '../entities/like.entity';
+import { Post, PostStatus } from '../entities/post.entity';
+import { queryOptionsDto } from '../dto/query-options.dto';
+import { query } from 'express';
 
 export const enum ServiceMethod {
   update,
@@ -12,9 +16,11 @@ export const enum ServiceMethod {
 
 export class UserService {
   private userRepository: Repository<User>;
+  private likeRepository: Repository<Like>;
 
   constructor() {
     this.userRepository = AppDataSource.getRepository(User);
+    this.likeRepository = AppDataSource.getRepository(Like);
   }
 
   private validateUserDTO(userData: Partial<User>, method: ServiceMethod) {
@@ -94,6 +100,10 @@ export class UserService {
     return user;
   }
 
+  public async getUserByEmailSafe(email: string): Promise<User | null> {
+    return await this.userRepository.findOneBy({ email });
+  }
+
   public async getUserByLogin(login: string): Promise<User> {
     const user = await this.userRepository.findOneBy({ login });
     if (!user) {
@@ -102,12 +112,32 @@ export class UserService {
     return user;
   }
 
+  public async getUserByLoginSafe(login: string): Promise<User | null> {
+    return await this.userRepository.findOneBy({ login });
+  }
+
+  public async getAllLikedPosts(
+    userId: number,
+    queryOptions: QueryOptions,
+  ): Promise<{ data: Post[]; total: number }> {
+    queryOptions.isPost = true;
+    queryOptions.sortField = 'publish_date';
+    const queryBuilder = this.likeRepository
+      .createQueryBuilder('like')
+      .leftJoinAndSelect('like.post', 'post')
+      .where('like.user_id = :userId', { userId });
+
+    const paginator = new Paginator<Post>(queryOptions);
+    return await paginator.paginate(queryBuilder);
+  }
+
   public async getAllUsers(
     queryOptions: QueryOptions,
   ): Promise<{ data: User[]; total: number }> {
+    queryOptions.isPost = false;
+    queryOptions.sortField = queryOptions.sortField || 'publisher_rating';
     const queryBuilder = this.userRepository.createQueryBuilder('user');
     const paginator = new Paginator<User>(queryOptions);
-
     return await paginator.paginate(queryBuilder);
   }
 

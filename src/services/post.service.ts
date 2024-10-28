@@ -57,8 +57,10 @@ export class PostService {
   public async createPost(postData: Partial<Post>): Promise<Post> {
     const post = this.validatePostDTO(postData, ServiceMethod.create);
 
+    const user = await this.UserService.getUserById(postData.author?.id!);
+
     const categories = await this.categoryRepository.findBy({
-      id: In(postData.categories?.map((c) => c.id) || []),
+      id: In(postData.categories || []),
     });
 
     if (categories.length !== postData.categories?.length) {
@@ -67,7 +69,7 @@ export class PostService {
 
     const newPost = this.postRepository.create(post);
     newPost.categories = categories;
-    newPost.author = await this.UserService.getUserById(postData.author?.id!);
+    newPost.author = user;
     return await this.postRepository.save(newPost);
   }
 
@@ -78,7 +80,7 @@ export class PostService {
 
     if (updatedPost.categories) {
       const categories = await this.categoryRepository.findBy({
-        id: In(updatedPost.categories?.map((c) => c.id) || []),
+        id: In(postData.categories || []),
       });
 
       if (categories.length !== updatedPost.categories?.length) {
@@ -129,8 +131,9 @@ export class PostService {
     queryOptions: QueryOptions,
   ): Promise<{ data: Comment[]; total: number }> {
     const post = await this.getPostById(postId);
-    const queryBuilder = this.commentRepository.createQueryBuilder('comment');
-    queryOptions.filters = { postId: post.id };
+    const queryBuilder = this.commentRepository
+      .createQueryBuilder('comment')
+      .where('comment.post.id = :postId', { postId });
     const paginator = new Paginator<Comment>(queryOptions);
     return await paginator.paginate(queryBuilder);
   }

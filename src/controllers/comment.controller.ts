@@ -53,6 +53,11 @@ export class CommentController {
     }
     const comment =
       await CommentController.CommentService.getCommentById(commentId);
+    if (comment.status !== 'active') {
+      throw new ForbiddenError(
+        'You are not authorized to like/dislike this comment.',
+      );
+    }
     const post = await postService.getPostById(comment.post.id);
     if (
       (post.status === 'locked' || post.status !== 'active') &&
@@ -91,7 +96,7 @@ export class CommentController {
       req.user?.role !== UserRole.Admin
     ) {
       throw new ForbiddenError(
-        'Post is locked. You are not authorized to like/dislike this comment.',
+        'Post is locked. You are not authorized to update this comment.',
       );
     }
     const updatedComment = await CommentController.CommentService.updateComment(
@@ -122,20 +127,29 @@ export class CommentController {
       req.user?.role !== UserRole.Admin
     ) {
       throw new ForbiddenError(
-        'Post is locked. You are not authorized to like/dislike this comment.',
+        'Post is locked. You are not authorized to delete this comment.',
       );
     }
     await CommentController.CommentService.deleteComment(commentId);
     return res.status(StatusCodes.NO_CONTENT).send();
   }
 
-  public static async DeleteLikeDislike(req: Request, res: Response) {
+  private static async DeleteLikeDislike(
+    req: Request,
+    res: Response,
+    type: 'like' | 'dislike',
+  ) {
     const commentId = parseInt(req.params.comment_id, 10);
     if (!commentId) {
       throw new BadRequestError('Comment Id is required');
     }
     const comment =
       await CommentController.CommentService.getCommentById(commentId);
+    if (comment.status !== 'active') {
+      throw new ForbiddenError(
+        'You are not authorized to like/dislike this comment.',
+      );
+    }
     const post = await postService.getPostById(comment.post.id);
     if (
       (post.status === 'locked' || post.status !== 'active') &&
@@ -148,8 +162,16 @@ export class CommentController {
     const like = await CommentController.CommentService.DeleteLikeDislike(
       commentId,
       req.user?.id!,
-      req.body.type,
+      type,
     );
     return res.status(StatusCodes.OK).json(like);
+  }
+
+  public static async DeleteLike(req: Request, res: Response) {
+    return CommentController.DeleteLikeDislike(req, res, 'like');
+  }
+
+  public static async DeleteDislike(req: Request, res: Response) {
+    return CommentController.DeleteLikeDislike(req, res, 'dislike');
   }
 }

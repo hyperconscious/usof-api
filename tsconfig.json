@@ -5,6 +5,7 @@
     "module": "CommonJS",
     "outDir": "./dist",
     "rootDir": "./src",
+    "typeRoots": ["./src/types"],
     "esModuleInterop": true,
     "strict": true,
     "allowJs": false,
@@ -12,7 +13,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
   },
-  "include": ["./src/**/*.ts", "./src/types/**/*"],
+  "include": ["./src/**/*.ts"],
   "exclude": ["./node_modules"],
   "typeRoots": ["./node_modules/@types/index.d.ts"]
   }

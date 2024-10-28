@@ -37,7 +37,7 @@ export class AddLikeTriggers1729776728582 implements MigrationInterface {
                     IF OLD.entity_type = 'post' THEN
                         UPDATE post SET dislikes_count = dislikes_count - 1 WHERE id = OLD.post_id;
                     ELSEIF OLD.entity_type = 'comment' THEN
-                        UPDATE comment SET likes_count = dislikes_count - 1 WHERE id = OLD.comment_id;
+                        UPDATE comment SET dislikes_count = dislikes_count - 1 WHERE id = OLD.comment_id;
                     END IF;
                 END IF;
                 CALL update_rating(OLD.user_id, OLD.entity_type);

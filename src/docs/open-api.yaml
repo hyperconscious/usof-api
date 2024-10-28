@@ -1,0 +1,1821 @@
+openapi: 3.0.3
+info:
+  title: Usof Api
+  version: "1.0.0"
+  description: The Usof API allows you to perform CRUD operations on users, posts, comments, categories, and provides an interface for managing likes.
+  contact:
+    email: "kklinaev@gmail.com"
+
+servers:
+  - url: http://localhost:3000
+    description: Local server
+
+tags:
+  - name: Auth
+    description: Operations related to user authentication and account management
+  - name: User
+    description: Operations related to user profiles and management
+  - name: Posts
+    description: Operations related to blog posts
+  - name: Category
+    description: Operations related to categories for posts
+  - name: Comment
+    description: Operations related to comments on posts
+  - name: Like
+    description: Operations related to likes on posts and comments
+  - name: Favourite
+    description: Operations related to favourite posts
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: New user registration. After successful registration, the user is sent an email with a confirmation token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  type: string
+                  example: "newUserLogin"
+                password:
+                  type: string
+                  example: "StrongPassword123"
+                passwordConfirmation:
+                  type: string
+                  example: "StrongPassword123"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  example: "newuser@example.com"
+
+      responses:
+        201:
+          $ref: "#/components/responses/AuthResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login a user
+      description: User login with email verification. If email is not verified, an error will be returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                loginOrEmail:
+                  type: string
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "UserPassword123"
+      responses:
+        200:
+          $ref: "#/components/responses/AuthResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh the user's tokens
+      description: Update user tokens based on refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Niwicm9sZSI6InVzZXIiLCJpYXQiOjE3MzAwNjc4MjMsImV4cCI6MTczMDY3MjYyM30.lqtZbBjFE1jlj_FDUPbBfDrlSJc4V9NWEaBRXl4hjHk"
+      responses:
+        200:
+          $ref: "#/components/responses/AuthResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+
+  /api/auth/verify-email:
+    post:
+      tags:
+        - Auth
+      summary: Verify user email
+      description: User email confirmation. The user must follow the link in the email sent to their email after registration.
+      parameters:
+        - name: token
+          in: query
+          required: true
+          description: Token for email confirmation
+          schema:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJra2xpbmFldkBnbWFpbC5jb20iLCJpYXQiOjE3MzAwNzA1NzMsImV4cCI6MTczMDA3MDk5M30.r65j9ecPnrfAJAOw27GlFkg4npfqrSF1yCcYlqhpScU"
+      responses:
+        200:
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Email verified successfully."
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /api/auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Initiate password reset process
+      description: Sends a password reset email to the specified email address if such a user exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: 'user@example.com'
+      responses:
+        200:
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Password reset email sent successfully.'
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/password-reset:
+    post:
+      tags:
+        - Auth
+      summary: Reset user password
+      description: Resets the user's password to a new one if a valid token is provided.
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZXhwIjoxNzMwNzY3NzUyfQ.hJU5f6lJHtKdGcQ42X1FpQ'
+          description: Token from email to verify the password reset request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: 'NewSecurePassword123'
+                passwordConfirmation:
+                  type: string
+                  example: 'NewSecurePassword123'
+      responses:
+        200:
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Password reset successfully.'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/users:
+    get:
+      tags:
+        - User
+      summary: Retrieve a list of all users
+      description: Fetches a list of users with optional query parameters for pagination and filtering.
+      parameters:
+      - name: page
+        in: query
+        description: Page number for pagination (minimum 1)
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        description: Number of items per page (1-100)
+        required: false
+        schema:
+          type: integer
+          default: 10
+      - name: sortField
+        in: query
+        description: Field to sort by (e.g., `createdAt`, `publisher_rating`)
+        required: false
+        schema:
+          type: string
+      - name: sortDirection
+        in: query
+        description: Sort direction, either ASC or DESC
+        required: false
+        schema:
+          type: string
+          enum: [ASC, DESC]
+          default: ASC
+      - name: search
+        in: query
+        description: Search term to match across login or full name
+        required: false
+        schema:
+          type: string
+          minLength: 3
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - User
+      summary: Create a new user
+      description: Allows an admin to create a new user by providing user details.
+      requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                    example: "newUserLogin"
+                  password:
+                    type: string
+                    example: "StrongPassword123"
+                  passwordConfirmation:
+                    type: string
+                    example: "StrongPassword123"
+                  full_name:
+                    type: string
+                    example: "John Doe"
+                  email:
+                    type: string
+                    example: "newuser@example.com"
+                  role:
+                    type: string
+                    enum: [admin, user]
+                    example: user
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /api/users/my-profile:
+    get:
+      tags:
+        - User
+      summary: Retrieve the authenticated user's profile
+      description: Returns the profile information of the currently authenticated user.
+      responses:
+        200:
+          description: Authenticated user's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /api/users/{user_id}:
+    get:
+      tags:
+        - User
+      summary: Retrieve user profile by ID
+      description: Fetches the profile information for a specified user by their unique ID.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+    patch:
+      tags:
+        - User
+      summary: Update user information
+      description: Allows an authenticated user or an admin to update a user's profile. Only admins can change user roles.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                    example: "newUserLogin"
+                  password:
+                    type: string
+                    example: "StrongPassword123"
+                  full_name:
+                    type: string
+                    example: "John Doe"
+                  email:
+                    type: string
+                    example: "newuser@example.com"
+                  role:
+                    type: string
+                    enum: [admin, user]
+                    example: user
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - User
+      summary: Delete user
+      description: Allows an authenticated user or an admin to delete a user by ID. Users can delete only their own profiles. Admins can delete any user.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: User deleted successfully
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/users/{user_id}/liked:
+    get:
+      tags:
+        - User
+      summary: Retrieve user liked posts
+      description: Fetches a list of posts liked by the specified user.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: List of liked posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/users/avatar:
+    patch:
+      tags:
+        - User
+      summary: Upload user avatar
+      description: Allows an authenticated user to upload a new avatar image for their profile.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload
+      responses:
+        200:
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Avatar uploaded successfully.
+                  data:
+                    $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/posts:
+    get:
+      tags:
+        - Posts
+      summary: Retrieve a list of all posts
+      description: Fetches a list of posts with optional query parameters for pagination and filtering. For users shows only active posts.
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination (minimum 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page (1-100)
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: sortField
+          in: query
+          description: Field to sort by (e.g., `publishDate`, `likes_count`). Default by likes_count.
+          required: false
+          schema:
+            type: string
+        - name: sortDirection
+          in: query
+          description: Sort direction, either ASC or DESC
+          required: false
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: ASC
+        - name: filters[status]
+          in: query
+          description: Filter by status (active, inactive, or locked)
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive, locked]
+        - name: filters[categoryId]
+          in: query
+          description: Filter by category ID
+          required: false
+          schema:
+            type: integer
+        - name: filters[categories]
+          in: query
+          description: Filter by categories (comma-separated list of category names)
+          required: false
+          schema:
+            type: string
+        - name: filters[dateRange]
+          in: query
+          description: Date range for filtering (e.g., "2024-01-01,2024-12-31")
+          required: false
+          schema:
+            type: string
+        - name: filters[postAuthor][id]
+          in: query
+          description: Filter by author ID
+          required: false
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Search term to match across fields
+          required: false
+          schema:
+            type: string
+            minLength: 3
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+        - Posts
+      summary: Create a new post
+      description: Allows an authenticated user to create a new post.
+      requestBody:
+        required: true
+        content:
+           application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Sample Post Title"
+                content:
+                  type: string
+                  example: "This is the content of the post."
+                images:
+                  type: array
+                  items:
+                    type: string
+                  example: ["image1.jpg", "image2.jpg"]
+                categories:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2]
+      responses:
+        201:
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Post'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /api/posts/my-posts:
+    get:
+      tags:
+        - Posts
+      summary: Retrieve a list of authenticated user's posts
+      description: Fetches a list of posts created by the authenticated user with optional query parameters for pagination and filtering.
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination (minimum 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page (1-100)
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: sortField
+          in: query
+          description: Field to sort by (e.g., `publishDate`, `likes_count`). Default by likes_count.
+          required: false
+          schema:
+            type: string
+        - name: sortDirection
+          in: query
+          description: Sort direction, either ASC or DESC
+          required: false
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: ASC
+        - name: filters[status]
+          in: query
+          description: Filter by status (active, inactive, or locked)
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive, locked]
+        - name: filters[categoryId]
+          in: query
+          description: Filter by category ID
+          required: false
+          schema:
+            type: integer
+        - name: filters[categories]
+          in: query
+          description: Filter by categories (comma-separated list of category names)
+          required: false
+          schema:
+            type: string
+        - name: filters[dateRange]
+          in: query
+          description: Date range for filtering (e.g., "2024-01-01,2024-12-31")
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search term to match across fields
+          required: false
+          schema:
+            type: string
+            minLength: 3
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /api/posts/{post_id}:
+    get:
+      tags:
+        - Posts
+      summary: Retrieve post by ID
+      description: Fetches the post information for a specified post by its unique ID. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Posts
+      summary: Update post
+      description: Allows an authenticated user to update a post by ID. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Sample Post Title"
+                content:
+                  type: string
+                  example: "This is the content of the post."
+                images:
+                  type: array
+                  items:
+                    type: string
+                  example: ["image1.jpg", "image2.jpg"]
+                categories:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2]
+                status:
+                  type: string
+                  enum: [active, inactive, locked]
+                  example: active
+      responses:
+        200:
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Post'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Posts
+      summary: Delete post
+      description: Allows an authenticated user to delete a post by ID. Users can delete only their own posts.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Post deleted successfully
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/posts/{post_id}/comments:
+    get:
+      tags:
+        - Comment
+      summary: Retrieve comments for a post
+      description: Fetches a list of comments for the specified post. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          description: Page number for pagination (minimum 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page (1-100)
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: sortField
+          in: query
+          description: Field to sort by (e.g., `publishDate`, `likes_count`). Default by id.
+          required: false
+          schema:
+            type: string
+        - name: sortDirection
+          in: query
+          description: Sort direction, either ASC or DESC
+          required: false
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: ASC
+      responses:
+        200:
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Comment
+      summary: Create a new comment
+      description: Allows an authenticated user to create a new comment on a post. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  example: "This is a comment."
+      responses:
+        201:
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Comment'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/posts/{post_id}/like:
+    post:
+      tags:
+        - Like
+      summary: Like a post
+      description: Allows an authenticated user to like/dislike a post. Thorws forbidden if the post is inactive or locked.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [like, dislike]
+                  example: like
+      responses:
+        201:
+          description: Post liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Like'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Like
+      summary: Unlike a post
+      description: Allows an authenticated user to unlike a post. Thorws forbidden if the post is inactive or locked.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Post unliked successfully
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/posts/{post_id}/dislike:
+    delete:
+      tags:
+      - Like
+      summary: Undislike a post
+      description: Allows an authenticated user to Undislike a post. Thorws forbidden if the post is inactive or locked.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Post unliked successfully
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/posts/{post_id}/categories:
+    get:
+      tags:
+        - Category
+      summary: Retrieve categories for a post
+      description: Fetches a list of categories for the specified post. Thorws forbidden if the post is inactive.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{post_id}/likes:
+    get:
+      tags:
+        - Like
+      summary: Retrieve a number of likes for a post
+      description: Fetches  a number of  likes for the specified post. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: number of likes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  likes:
+                    type: integer
+                    example: 10
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{post_id}/dislikes:
+    get:
+      tags:
+        - Like
+      summary: Retrieve a number of dislikes for a post
+      description: Fetches  a number of  dislikes for the specified post. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: number of dislikes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dislikes:
+                    type: integer
+                    example: 10
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/categories:
+    get:
+      tags:
+        - Category
+      summary: Retrieve a list of all categories
+      description: Fetches a list of categories with optional query parameters for pagination and filtering.
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination (minimum 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page (1-100)
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: sortField
+          in: query
+          description: Field to sort by (e.g., `createdAt`, `name`)
+          required: false
+          schema:
+            type: string
+        - name: sortDirection
+          in: query
+          description: Sort direction, either ASC or DESC
+          required: false
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: ASC
+      responses:
+        200:
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags:
+        - Category
+      summary: Create a new category
+      description: Allows admins to create a new category.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Sport"
+                description:
+                  type: string
+                  example: "Posts about sports."
+      responses:
+        201:
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - bearerAuth: []
+
+  /api/categories/{category_id}:
+    get:
+      tags:
+        - Category
+      summary: Retrieve category by ID
+      description: Fetches the category information for a specified category by its unique ID.
+      parameters:
+        - name: category_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        404:
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+        - Category
+      summary: Update category
+      description: Allows an admin to update a category by ID.
+      parameters:
+        - name: category_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Sport"
+                description:
+                  type: string
+                  example: "Posts about sports."
+      responses:
+        200:
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Category'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - Category
+      summary: Delete category
+      description: Allows an admin to delete a category by ID.
+      parameters:
+        - name: category_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Category deleted successfully
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/comments/{comment_id}:
+    get:
+      tags:
+        - Comment
+      summary: Retrieve comment by ID
+      description: Fetches the comment information for a specified comment by its unique ID. Displays a "Forbidden" message if the post status is inactive and you are neither the author nor the admin.
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+        - Comment
+      summary: Update comment
+      description: Allows an authenticated user or an admin to update a comment by ID. Displays a "Forbidden" message if the post status is inactive or locked and you are not the admin.
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - inactive
+                  default: active
+      responses:
+        200:
+          description: Comment updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Comment'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Comment
+      summary: Delete comment
+      description: Allows an authenticated user or an admin to delete a comment by ID. Displays a "Forbidden" message if the post status is inactive or locked and you are not the admin.
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Comment deleted successfully
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/comments/{comment_id}/like:
+    post:
+      tags:
+        - Like
+      summary: Like a comment
+      description: Allows an authenticated user to like/dislike a comment. Thorws forbidden if the post is inactive or locked.
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [like, dislike]
+                  example: like
+      responses:
+        201:
+          description: Comment liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Like'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - Like
+      summary: Unlike a comment
+      description: Allows an authenticated user to unlike a comment. Thorws forbidden if the post is inactive or locked.
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Comment unliked successfully
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/comments/{comment_id}/dislike:
+    delete:
+      tags:
+      - Like
+      summary: Undislike a comment
+      description: Allows an authenticated user to Undislike a comment. Thorws forbidden if the post is inactive or locked.
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Comment unliked successfully
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/favourites:
+    get:
+      tags:
+        - Favourite
+      summary: Retrieve a list of all favourite posts
+      description: Fetches a list of favourite posts for the authenticated user.
+      responses:
+        200:
+          description: List of favourits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Favourite'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - Favourite
+      summary: Add a post to favourites
+      description: Allows an authenticated user to add a post to favourites.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                post:
+                  type: integer
+                  example: 1
+      responses:
+        201:
+          description: Post added to favourites successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Favourite'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/favourites/{post_id}:
+    delete:
+      tags:
+        - Favourite
+      summary: Remove a post from favourites
+      description: Allows an authenticated user to remove a post from favourites.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Post removed from favourites successfully
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: integer
+                example: 400
+              method:
+                type: string
+                example: "POST"
+              message:
+                type: string
+                example: "Invalid request"
+              path:
+                type: string
+                example: "/api/auth/login"
+    Unauthorized:
+      description: Invalid or expired token or user does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: integer
+                example: 401
+              method:
+                type: string
+                example: "POST"
+              message:
+                type: string
+                example: "Unauthorized request"
+    Forbidden:
+      description: Forbidden request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: integer
+                example: 403
+              method:
+                type: string
+                example: "POST"
+              message:
+                type: string
+                example: "Access denied"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: integer
+                example: 404
+              method:
+                type: string
+                example: "GET"
+              message:
+                type: string
+                example: "Resource not found"
+    AuthResponse:
+      description: Authentication response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              accessToken:
+                $ref: "#/components/schemas/AccessToken"
+              refreshToken:
+                $ref: "#/components/schemas/RefreshToken"
+  examples:
+     PostListExample:
+      summary: Example of retrieving posts with pagination, sorting, and filters
+      value:
+        page: 1
+        limit: 10
+        sortField: publishDate
+        sortDirection: ASC
+        search: "example search term"
+        filters:
+          categories: "sport,music"
+          dateRange: "2024-01-01,2024-12-31"
+          status: "active"
+          categoryId: 1
+          postAuthor:
+            id: 1
+
+  schemas:
+    AccessToken:
+      type: string
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Niwicm9sZSI6InVzZXIiLCJpYXQiOjE3MzAwNjc4MjMsImV4cCI6MTczMDE1NDIyM30.9R9-qr3mKIjCDRdZbxdpNTHrtEeY-GYo0MtGB22lhW8"
+
+    RefreshToken:
+      type: string
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Niwicm9sZSI6InVzZXIiLCJpYXQiOjE3MzAwNjc4MjMsImV4cCI6MTczMDY3MjYyM30.lqtZbBjFE1jlj_FDUPbBfDrlSJc4V9NWEaBRXl4hjHk"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        login:
+          type: string
+          minLength: 4
+          maxLength: 20
+          example: user123
+        password:
+          type: string
+          example: secretPassword123
+        full_name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        verified:
+          type: boolean
+          example: false
+        avatar:
+          type: string
+          example: avatar.jpg
+        publisherRating:
+          type: number
+          example: 0
+        commentatorRating:
+          type: number
+          example: 0
+        role:
+          type: string
+          enum: [admin, user]
+          example: user
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        author:
+          $ref: "#/components/schemas/User"
+        title:
+          type: string
+          minLength: 5
+          maxLength: 255
+          example: "Sample Post Title"
+        publishDate:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        status:
+          type: string
+          enum: [active, inactive, locked]
+          example: active
+        content:
+          type: string
+          example: "This is the content of the post."
+        images:
+          type: array
+          items:
+            type: string
+          example: ["image1.jpg", "image2.jpg"]
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        likesCount:
+          type: integer
+          example: 0
+        dislikesCount:
+          type: integer
+          example: 0
+        commentsCount:
+          type: integer
+          example: 0
+
+    Like:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user:
+          $ref: "#/components/schemas/User"
+        publishDate:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        entityType:
+          type: string
+          enum: [post, comment]
+          example: post
+        post:
+          $ref: "#/components/schemas/Post"
+        comment:
+          $ref: "#/components/schemas/Comment"
+        type:
+          type: string
+          enum: [like, dislike]
+          example: like
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        author:
+          $ref: "#/components/schemas/User"
+        publishDate:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        content:
+          type: string
+          example: "This is a comment."
+        likesCount:
+          type: integer
+          example: 0
+        dislikesCount:
+          type: integer
+          example: 0
+        post:
+          $ref: "#/components/schemas/Post"
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Category Title"
+        description:
+          type: string
+          example: "This is a category description."
+
+    Favourite:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user:
+          $ref: "#/components/schemas/User"
+        post:
+          $ref: "#/components/schemas/Post"

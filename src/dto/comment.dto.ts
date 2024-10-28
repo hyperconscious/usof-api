@@ -5,10 +5,12 @@ export const createCommentDto = Joi.object({
     'string.empty': 'Content is required',
     'any.required': 'Content is required',
   }),
+  status: Joi.string().valid('active', 'inactive').optional(),
 });
 
 export const updateCommentDto = Joi.object({
-  content: Joi.string().min(1).optional().messages({
-    'string.empty': 'Content cannot be empty',
-  }),
+  // content: Joi.string().min(1).optional().messages({
+  //   'string.empty': 'Content cannot be empty',
+  // }),
+  status: Joi.string().valid('active', 'inactive').optional(),
 });

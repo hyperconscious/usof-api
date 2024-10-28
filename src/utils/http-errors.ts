@@ -1,9 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 
 export class HttpError extends Error {
+  public statusCode: StatusCodes;
+
   constructor(statusCode: StatusCodes, message: string) {
     super(message);
     this.name = this.constructor.name;
+    this.statusCode = statusCode;
     Object.setPrototypeOf(this, HttpError.prototype);
   }
 }

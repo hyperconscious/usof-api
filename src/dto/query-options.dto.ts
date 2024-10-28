@@ -11,7 +11,6 @@ export interface Filters {
   categoryId?: number;
   categories?: string;
   dateRange?: string;
-  search?: string;
 }
 
 export interface QueryOptions {
@@ -21,6 +20,7 @@ export interface QueryOptions {
   sortDirection?: 'ASC' | 'DESC';
   filters?: Filters;
   search?: string;
+  isPost?: boolean;
 }
 
 export const queryOptionsDto = Joi.object({

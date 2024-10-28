@@ -60,9 +60,9 @@ export class CategoryService {
     if (existingCategory) {
       throw new BadRequestError('Category already exists');
     }
-    category.title =
-      category.title.charAt(0).toUpperCase() +
-      category.title.slice(1).toLowerCase();
+    // category.title =
+    //   category.title.charAt(0).toUpperCase() +
+    //   category.title.slice(1).toLowerCase();
     const newCategory = this.categoryRepository.create(category);
     await this.categoryRepository.save(newCategory);
     return newCategory;
@@ -89,9 +89,9 @@ export class CategoryService {
     if (existingCategoryByTitle && existingCategoryByTitle.id !== id) {
       throw new BadRequestError('Category already exists');
     }
-    category.title =
-      category.title.charAt(0).toUpperCase() +
-      category.title.slice(1).toLowerCase();
+    // category.title =
+    //   category.title.charAt(0).toUpperCase() +
+    //   category.title.slice(1).toLowerCase();
     await this.categoryRepository.update(id, category);
     return { ...existingCategory, ...category };
   }

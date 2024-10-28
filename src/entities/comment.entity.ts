@@ -12,6 +12,10 @@ import { Post } from './post.entity';
 import { Like } from './like.entity';
 import { IsNotEmpty } from 'class-validator';
 
+export enum CommentStatus {
+  active = 'active',
+  inactive = 'inactive',
+}
 @Entity()
 export class Comment {
   @PrimaryGeneratedColumn()
@@ -27,6 +31,13 @@ export class Comment {
   @Column('text')
   @IsNotEmpty({ message: 'Content is required' })
   content!: string;
+
+  @Column({
+    type: 'enum',
+    enum: CommentStatus,
+    default: CommentStatus.active,
+  })
+  status!: CommentStatus;
 
   @OneToMany(() => Like, (like) => like.comment)
   likes!: Like[];

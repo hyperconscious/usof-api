@@ -28,6 +28,18 @@ export class UserController {
     return queryOptions;
   }
 
+  public static async getAllLikedPosts(req: Request, res: Response) {
+    const queryOptions = UserController.validateQueryDto(req);
+    const userId = req.user!.id;
+    const user = await UserController.userService.getUserById(userId);
+
+    const posts = await UserController.userService.getAllLikedPosts(
+      userId,
+      queryOptions,
+    );
+    return res.status(StatusCodes.OK).json(posts);
+  }
+
   public static async getAllUsers(req: Request, res: Response) {
     const queryOptions = UserController.validateQueryDto(req);
 
@@ -51,6 +63,10 @@ export class UserController {
     if (password !== passwordConfirmation) {
       throw new BadRequestError('Password confirmation does not match.');
     }
+    let verified = false;
+    if (req.user?.role === UserRole.Admin) {
+      verified = true;
+    }
 
     const newUser = await UserController.userService.createUser({
       login,
@@ -58,6 +74,7 @@ export class UserController {
       password,
       email,
       role,
+      verified,
     });
 
     return res.status(StatusCodes.CREATED).json({ data: newUser });
@@ -65,40 +82,18 @@ export class UserController {
 
   public static async updateUser(req: Request, res: Response) {
     const userData = req.body;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new UnauthorizedError('You need to be logged in.');
-    }
+    const userId = req.user!.id;
 
     if (
-      req.user?.role !== UserRole.Admin &&
-      userId !== parseInt(req.params.user_id, 10)
+      (req.user?.role !== UserRole.Admin &&
+        userId !== parseInt(req.params.user_id, 10)) ||
+      (userData.UserRole && req.user?.role !== UserRole.Admin)
     ) {
       throw new ForbiddenError('You are not authorized to update this user.');
     }
 
-    if (userData.UserRole && req.user?.role !== UserRole.Admin) {
-      throw new ForbiddenError('You are not authorized to update this user.');
-    }
-
-    if (userData.email) {
-      const user = await UserController.userService.getUserByEmail(
-        userData.email,
-      );
-      if (user && user.id !== userId) {
-        throw new BadRequestError('Email already exists.');
-      } else {
-        const mailToken = UserController.jwtService.generateEmailToken(user);
-        await UserController.mailService.sendVerificationEmail(
-          user.email,
-          mailToken,
-        );
-      }
-    }
-
     if (userData.login) {
-      const user = await UserController.userService.getUserByLogin(
+      const user = await UserController.userService.getUserByLoginSafe(
         userData.login,
       );
       if (user && user.id !== userId) {
@@ -106,8 +101,27 @@ export class UserController {
       }
     }
 
+    if (userData.email) {
+      const user = await UserController.userService.getUserByEmailSafe(
+        userData.email,
+      );
+      if (user && user.id !== userId) {
+        throw new BadRequestError('Email already exists.');
+      } else if (user && user.id === userId) {
+        throw new BadRequestError('Email already exists.');
+      } else {
+        const user = await UserController.userService.getUserById(userId);
+        userData.verified = false;
+        const mailToken = UserController.jwtService.generateEmailToken(user);
+        await UserController.mailService.sendVerificationEmail(
+          user!.email,
+          mailToken,
+        );
+      }
+    }
+
     const updatedUser = await UserController.userService.updateUser(
-      userId,
+      userId!,
       userData,
     );
     return res
@@ -116,11 +130,7 @@ export class UserController {
   }
 
   public static async uploadAvatar(req: Request, res: Response) {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new UnauthorizedError('You need to be logged in.');
-    }
+    const userId = req.user!.id;
 
     if (!req.file) {
       throw new BadRequestError('No file uploaded.');
@@ -137,11 +147,7 @@ export class UserController {
   }
 
   public static async deleteUser(req: Request, res: Response) {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new UnauthorizedError('You need to be logged in.');
-    }
+    const userId = req.user!.id;
 
     if (
       req.user?.role !== UserRole.Admin &&
