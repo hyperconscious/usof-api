@@ -9,7 +9,7 @@ import { databaseService } from './services/database.service';
 import { errorMiddleware } from './middlewares/error-handle.middleware';
 import { NotFoundError } from './utils/http-errors';
 import path from 'path';
-import setupSwagger from './docs/swagger';
+import setupSwagger from './config/swagger';
 
 class UsofServer {
   private app: express.Application;
@@ -33,7 +33,6 @@ class UsofServer {
   }
 
   private configureRoutes(): void {
-    // this.app.use('/', apiRoutes.get('/'));
     this.app.use('/api', apiRoutes);
   }
 
@@ -46,7 +45,7 @@ class UsofServer {
     try {
       await databaseService.connectWithRetries();
       this.app.listen(port, () => {
-        startupLogger.info(`Server is running on http://localhost:${port}`);
+        startupLogger.info(`Server is running on http://localhost:${port}/api`);
       });
     } catch (error) {
       startupLogger.error(

@@ -4,7 +4,7 @@ import YAML from 'yamljs';
 import path from 'path';
 
 const setupSwagger = (app: express.Application) => {
-  const swaggerDocument = YAML.load(path.resolve(__dirname, './open-api.yaml'));
+  const swaggerDocument = YAML.load(path.resolve(__dirname, '../../docs/open-api.yaml'));
 
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 };

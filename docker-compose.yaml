@@ -21,8 +21,7 @@ services:
       context: .
       dockerfile: Dockerfile
     command: >
-      sh -c "npm start" 
-  # npm run migration:run
+      sh -c "npm run db:migrate && npm run start"
     image: usof
     env_file: .env
     environment:
