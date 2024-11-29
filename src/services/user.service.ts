@@ -8,6 +8,8 @@ import { Like } from '../entities/like.entity';
 import { Post, PostStatus } from '../entities/post.entity';
 import { queryOptionsDto } from '../dto/query-options.dto';
 import { query } from 'express';
+import { Comment } from '../entities/comment.entity';
+import { Favorite } from '../entities/favoutite.entity';
 
 export const enum ServiceMethod {
   update,
@@ -17,10 +19,16 @@ export const enum ServiceMethod {
 export class UserService {
   private userRepository: Repository<User>;
   private likeRepository: Repository<Like>;
+  private postRepository: Repository<Post>;
+  private commentRepository: Repository<Comment>;
+  private favouriteRepository: Repository<Favorite>;
 
   constructor() {
     this.userRepository = AppDataSource.getRepository(User);
     this.likeRepository = AppDataSource.getRepository(Like);
+    this.postRepository = AppDataSource.getRepository(Post);
+    this.commentRepository = AppDataSource.getRepository(Comment);
+    this.favouriteRepository = AppDataSource.getRepository(Favorite);
   }
 
   private validateUserDTO(userData: Partial<User>, method: ServiceMethod) {
@@ -119,22 +127,29 @@ export class UserService {
   public async getAllLikedPosts(
     userId: number,
     queryOptions: QueryOptions,
-  ): Promise<{ data: Post[]; total: number }> {
-    queryOptions.isPost = true;
+  ): Promise<{ items: Post[]; total: number }> {
+    queryOptions.searchType = 'user';
     queryOptions.sortField = 'publish_date';
     const queryBuilder = this.likeRepository
       .createQueryBuilder('like')
       .leftJoinAndSelect('like.post', 'post')
-      .where('like.user_id = :userId', { userId });
+      .leftJoinAndSelect('post.author', 'author')
+      .where('like.user_id = :userId', { userId })
+      .andWhere('like.type = :type', { type: 'like' });
 
     const paginator = new Paginator<Post>(queryOptions);
-    return await paginator.paginate(queryBuilder);
+    const result = paginator.paginate(queryBuilder);
+    const paginatedResult = (await result) as any;
+    paginatedResult.items = paginatedResult.items.map(
+      (like: Like) => like.post,
+    );
+    return paginatedResult;
   }
 
   public async getAllUsers(
     queryOptions: QueryOptions,
-  ): Promise<{ data: User[]; total: number }> {
-    queryOptions.isPost = false;
+  ): Promise<{ items: User[]; total: number }> {
+    queryOptions.searchType = 'user';
     queryOptions.sortField = queryOptions.sortField || 'publisher_rating';
     const queryBuilder = this.userRepository.createQueryBuilder('user');
     const paginator = new Paginator<User>(queryOptions);
@@ -160,9 +175,23 @@ export class UserService {
   }
 
   public async deleteUser(id: number): Promise<boolean> {
-    const user = await this.getUserById(id);
-
-    await this.userRepository.remove(user);
-    return true;
+    try {
+      const user = await this.getUserById(id);
+      await this.likeRepository.delete({ user: { id: user.id } });
+      await this.favouriteRepository.delete({ user: { id: user.id } });
+      await this.commentRepository.delete({ author: { id: user.id } });
+      const posts = await this.postRepository.find({
+        where: { author: { id: user.id } },
+      });
+      for (const post of posts) {
+        await this.commentRepository.delete({ post: { id: post.id } });
+      }
+      await this.postRepository.delete({ author: { id: user.id } });
+      await this.userRepository.remove(user);
+      return true;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error('Unable to delete user due to existing dependencies.');
+    }
   }
 }

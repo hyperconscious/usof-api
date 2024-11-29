@@ -10,6 +10,7 @@ import { Paginator } from '../utils/paginator';
 import { QueryOptions } from '../dto/query-options.dto';
 import { createCommentDto } from '../dto/comment.dto';
 import { Like } from '../entities/like.entity';
+import { Favorite } from '../entities/favoutite.entity';
 
 export class PostService {
   private postRepository: Repository<Post>;
@@ -60,7 +61,7 @@ export class PostService {
     const user = await this.UserService.getUserById(postData.author?.id!);
 
     const categories = await this.categoryRepository.findBy({
-      id: In(postData.categories || []),
+      title: In(postData.categories || []),
     });
 
     if (categories.length !== postData.categories?.length) {
@@ -80,7 +81,7 @@ export class PostService {
 
     if (updatedPost.categories) {
       const categories = await this.categoryRepository.findBy({
-        id: In(postData.categories || []),
+        title: In(postData.categories || []),
       });
 
       if (categories.length !== updatedPost.categories?.length) {
@@ -104,7 +105,7 @@ export class PostService {
 
   public async getAllPosts(
     queryOptions: QueryOptions,
-  ): Promise<{ data: Post[]; total: number }> {
+  ): Promise<{ items: Post[]; total: number }> {
     const queryBuilder = this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.author', 'author')
@@ -113,12 +114,12 @@ export class PostService {
     const paginator = new Paginator<Post>(queryOptions);
     const result = paginator.paginate(queryBuilder);
     const paginatedResult = await result;
-    const postIds = paginatedResult.data.map((post) => post.id);
+    const postIds = paginatedResult.items.map((post) => post.id);
     const postsWithAllCategories = await this.postRepository.find({
       where: { id: In(postIds) },
       relations: ['categories'],
     });
-    paginatedResult.data = paginatedResult.data.map((post) => ({
+    paginatedResult.items = paginatedResult.items.map((post) => ({
       ...post,
       categories:
         postsWithAllCategories.find((p) => p.id === post.id)?.categories || [],
@@ -129,17 +130,26 @@ export class PostService {
   public async getAllCommentsByPostId(
     postId: number,
     queryOptions: QueryOptions,
-  ): Promise<{ data: Comment[]; total: number }> {
+  ): Promise<{ items: Comment[]; total: number }> {
     const post = await this.getPostById(postId);
     const queryBuilder = this.commentRepository
       .createQueryBuilder('comment')
-      .where('comment.post.id = :postId', { postId });
+      .leftJoinAndSelect('comment.author', 'author')
+      .where('comment.post.id = :postId', { postId })
+      .andWhere('comment.parent IS NULL');
+
+    if (!queryOptions.sortField) {
+      queryOptions.sortField = 'comment.likes_count';
+    }
+
     const paginator = new Paginator<Comment>(queryOptions);
     return await paginator.paginate(queryBuilder);
   }
 
   public async deletePost(id: number): Promise<boolean> {
     const post = await this.getPostById(id);
+    const favourites = await this.likeRepository.findBy({ post: { id } });
+    await this.likeRepository.remove(favourites);
     await this.postRepository.remove(post);
     return true;
   }
@@ -148,6 +158,7 @@ export class PostService {
     postId: number,
     authorId: number,
     commentData: Partial<Comment>,
+    parentCommentId?: number,
   ): Promise<Comment> {
     const post = await this.getPostById(postId);
     if (post.status !== 'active') {
@@ -155,11 +166,24 @@ export class PostService {
     }
     const author = await this.UserService.getUserById(authorId);
     const comment = this.validateCommentDTO(commentData);
-    const newComment = this.commentRepository.create({
+
+    const newCommentData: Comment = {
       ...comment,
       post,
       author,
-    });
+    };
+
+    if (parentCommentId) {
+      const parentComment = await this.commentRepository.findOneBy({
+        id: parentCommentId,
+      });
+      if (!parentComment) {
+        throw new BadRequestError('Parent comment not found');
+      }
+      newCommentData.parent = parentComment;
+    }
+
+    const newComment = this.commentRepository.create(newCommentData);
     return await this.commentRepository.save(newComment);
   }
 
@@ -230,6 +254,18 @@ export class PostService {
     }
 
     throw new BadRequestError(`You have not ${type}d this post`);
+  }
+
+  public async getUserReaction(
+    postId: number,
+    userId: number,
+  ): Promise<Like | null> {
+    const post = await this.getPostById(postId);
+    const user = await this.UserService.getUserById(userId);
+    return await this.likeRepository.findOneBy({
+      post: { id: postId },
+      user: { id: userId },
+    });
   }
 }
 

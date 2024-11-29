@@ -10,6 +10,7 @@ import { UserRole } from '../entities/user.entity';
 import { queryOptionsDto, QueryOptions } from '../dto/query-options.dto';
 import { JWTService } from '../services/jwt.service';
 import { MailService } from '../services/mail.service';
+import { createUserDto } from '../dto/user.dto';
 
 export class UserController {
   private static jwtService = new JWTService();
@@ -30,7 +31,7 @@ export class UserController {
 
   public static async getAllLikedPosts(req: Request, res: Response) {
     const queryOptions = UserController.validateQueryDto(req);
-    const userId = req.user!.id;
+    const userId = req.params.user_id as unknown as number;
     const user = await UserController.userService.getUserById(userId);
 
     const posts = await UserController.userService.getAllLikedPosts(
@@ -58,9 +59,11 @@ export class UserController {
   }
 
   public static async createUser(req: Request, res: Response) {
-    const { login, password, full_name, passwordConfirmation, email, role } =
-      req.body;
-    if (password !== passwordConfirmation) {
+    const UserDto = await createUserDto.validateAsync(req.body);
+    if (
+      UserDto.passwordConfirmation &&
+      UserDto.password !== UserDto.passwordConfirmation
+    ) {
       throw new BadRequestError('Password confirmation does not match.');
     }
     let verified = false;
@@ -69,11 +72,7 @@ export class UserController {
     }
 
     const newUser = await UserController.userService.createUser({
-      login,
-      full_name,
-      password,
-      email,
-      role,
+      ...UserDto,
       verified,
     });
 
@@ -81,6 +80,7 @@ export class UserController {
   }
 
   public static async updateUser(req: Request, res: Response) {
+    const callbackUrl = req.headers['x-callback-url'];
     const userData = req.body;
     const userId = req.user!.id;
 
@@ -96,7 +96,8 @@ export class UserController {
       const user = await UserController.userService.getUserByLoginSafe(
         userData.login,
       );
-      if (user && user.id !== userId) {
+      if (user && user.id !== parseInt(req.params.user_id, 10)) {
+        console.log(`${user?.id} - ${req.params.user_id}`);
         throw new BadRequestError('Login already exists.');
       }
     }
@@ -105,23 +106,13 @@ export class UserController {
       const user = await UserController.userService.getUserByEmailSafe(
         userData.email,
       );
-      if (user && user.id !== userId) {
+      if (user && user.id !== parseInt(req.params.user_id, 10)) {
         throw new BadRequestError('Email already exists.');
-      } else if (user && user.id === userId) {
-        throw new BadRequestError('Email already exists.');
-      } else {
-        const user = await UserController.userService.getUserById(userId);
-        userData.verified = false;
-        const mailToken = UserController.jwtService.generateEmailToken(user);
-        await UserController.mailService.sendVerificationEmail(
-          user!.email,
-          mailToken,
-        );
       }
     }
 
     const updatedUser = await UserController.userService.updateUser(
-      userId!,
+      parseInt(req.params.user_id, 10),
       userData,
     );
     return res
@@ -130,10 +121,14 @@ export class UserController {
   }
 
   public static async uploadAvatar(req: Request, res: Response) {
-    const userId = req.user!.id;
-
+    const userId = Number(req.params.user_id) || req.user!.id;
     if (!req.file) {
       throw new BadRequestError('No file uploaded.');
+    }
+
+    const user = await UserController.userService.getUserById(userId);
+    if (userId !== req.user?.id && req.user?.role !== UserRole.Admin) {
+      throw new ForbiddenError('You are not authorized to update this user.');
     }
 
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
@@ -147,7 +142,7 @@ export class UserController {
   }
 
   public static async deleteUser(req: Request, res: Response) {
-    const userId = req.user!.id;
+    const userId = Number(req.params.user_id);
 
     if (
       req.user?.role !== UserRole.Admin &&

@@ -30,6 +30,7 @@ postRouter.get(
   authorizeUser,
   PostController.getAllCategories,
 );
+
 postRouter.get('/:post_id/likes', authorizeUser, PostController.getAllLikes);
 postRouter.get(
   '/:post_id/dislikes',
@@ -41,6 +42,12 @@ postRouter.get(
   '/:post_id/categories',
   authorizeUser,
   PostController.getAllCategories,
+);
+
+postRouter.get(
+  '/:post_id/user-reaction',
+  authorizeUser,
+  PostController.getUserReaction,
 );
 
 export default postRouter;

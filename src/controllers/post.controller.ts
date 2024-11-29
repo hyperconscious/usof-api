@@ -23,7 +23,7 @@ export class PostController {
   public static async getAllPosts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
     queryOptions.sortField = queryOptions.sortField || 'likes_count';
-    queryOptions.isPost = true;
+    queryOptions.searchType = 'post';
     if (req.user?.role !== UserRole.Admin) {
       queryOptions.filters = {
         ...queryOptions.filters,
@@ -37,7 +37,7 @@ export class PostController {
   public static async getMyPosts(req: Request, res: Response) {
     const queryOptions = PostController.validateQueryDto(req);
     queryOptions.sortField = queryOptions.sortField || 'likes_count';
-    queryOptions.isPost = true;
+    queryOptions.searchType = 'post';
     queryOptions.filters = {
       ...queryOptions.filters,
       postAuthor: { id: req.user?.id! },
@@ -78,6 +78,7 @@ export class PostController {
         status: 'active',
       };
     }
+    queryOptions.searchType = 'comment';
     const comments = await PostController.postService.getAllCommentsByPostId(
       postId,
       queryOptions,
@@ -106,6 +107,7 @@ export class PostController {
       postId,
       req.user?.id!,
       req.body,
+      req.body.parentCommentId,
     );
 
     return res.status(StatusCodes.CREATED).json({ data: comment });
@@ -176,7 +178,10 @@ export class PostController {
   public static async AddLikeDislike(req: Request, res: Response) {
     const postId = parseInt(req.params.post_id, 10);
     const post = await PostController.postService.getPostById(postId);
-    if (post.status === 'locked' && req.user?.role !== UserRole.Admin) {
+    if (
+      (post.status === 'locked' || post.status === 'inactive') &&
+      req.user?.role !== UserRole.Admin
+    ) {
       throw new ForbiddenError(
         'Post is locked. You are not authorized to create like on this post.',
       );
@@ -263,5 +268,15 @@ export class PostController {
     }
     await PostController.postService.deletePost(postId);
     return res.status(StatusCodes.NO_CONTENT).send();
+  }
+
+  public static async getUserReaction(req: Request, res: Response) {
+    const postId = parseInt(req.params.post_id, 10);
+    const userId = req.user?.id!;
+    const reaction = await PostController.postService.getUserReaction(
+      postId,
+      userId,
+    );
+    return res.status(StatusCodes.OK).json({ reaction });
   }
 }

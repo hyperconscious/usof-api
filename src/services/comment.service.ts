@@ -6,6 +6,7 @@ import { Like } from '../entities/like.entity';
 import { UserService } from './user.service';
 import { updateCommentDto } from '../dto/comment.dto';
 import { PostService, postService } from './post.service';
+import { Paginator, QueryOptions } from '../utils/paginator';
 
 export class CommentService {
   private commentRepository: Repository<Comment>;
@@ -43,6 +44,24 @@ export class CommentService {
     return comment;
   }
 
+  public async getChildrenComments(
+    commentId: number,
+    queryOptions: QueryOptions,
+  ): Promise<{ items: Comment[]; total: number }> {
+    const comment = await this.getCommentById(commentId);
+    const queryBuilder = this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.author', 'author')
+      .where('comment.parent = :commentId', { commentId });
+
+    if (!queryOptions.sortField) {
+      queryOptions.sortField = 'comment.likes_count';
+    }
+
+    const paginator = new Paginator<Comment>(queryOptions);
+    return await paginator.paginate(queryBuilder);
+  }
+
   public async getLikesByCommentId(commentId: number): Promise<Number> {
     return (await this.getCommentById(commentId)).likesCount;
   }
@@ -56,33 +75,40 @@ export class CommentService {
     userId: number,
     type: 'like' | 'dislike',
   ): Promise<Like> {
-    const comment = await this.getCommentById(commentId);
-    const user = await this.userService.getUserById(userId);
-    const existingLike = await this.likeRepository.findOneBy({
-      comment: { id: commentId },
-      user: { id: userId },
-      type,
-    });
-    if (existingLike !== null) {
-      throw new BadRequestError(`You have already ${type}d this comment`);
-    }
-    const oppositeType = type === 'like' ? 'dislike' : 'like';
-    const oppositeLike = await this.likeRepository.findOneBy({
-      comment: { id: commentId },
-      user: { id: userId },
-      type: oppositeType,
-    });
-    if (oppositeLike) {
-      this.DeleteLikeDislike(commentId, userId, oppositeType);
-    }
-    const newLike = this.likeRepository.create({
-      comment,
-      user,
-      entityType: 'comment',
-      type,
-    });
-    await this.likeRepository.save(newLike);
-    return newLike;
+    return await AppDataSource.transaction(
+      async (transactionalEntityManager) => {
+        const comment = await this.getCommentById(commentId);
+        const user = await this.userService.getUserById(userId);
+        const likeRepository = transactionalEntityManager.getRepository(Like);
+
+        const existingLike = await likeRepository.findOneBy({
+          comment: { id: commentId },
+          user: { id: userId },
+          type,
+        });
+        if (existingLike) {
+          throw new BadRequestError(`You have already ${type}d this comment`);
+        }
+
+        const oppositeType = type === 'like' ? 'dislike' : 'like';
+        const oppositeLike = await likeRepository.findOneBy({
+          comment: { id: commentId },
+          user: { id: userId },
+          type: oppositeType,
+        });
+        if (oppositeLike) {
+          await transactionalEntityManager.remove(oppositeLike);
+        }
+
+        const newLike = likeRepository.create({
+          comment,
+          user,
+          entityType: 'comment',
+          type,
+        });
+        return await likeRepository.save(newLike);
+      },
+    );
   }
 
   public async DeleteLikeDislike(
@@ -122,7 +148,27 @@ export class CommentService {
 
   public async deleteComment(id: number): Promise<Comment> {
     const comment = await this.getCommentById(id);
+    const childComments = await this.commentRepository.find({
+      where: { parent: { id } },
+    });
+
+    for (const child of childComments) {
+      await this.deleteComment(child.id);
+    }
+
     await this.commentRepository.remove(comment);
     return comment;
+  }
+
+  public async getUserReaction(
+    commentId: number,
+    userId: number,
+  ): Promise<Like | null> {
+    const post = await this.getCommentById(commentId);
+    const user = await this.userService.getUserById(userId);
+    return await this.likeRepository.findOneBy({
+      comment: { id: commentId },
+      user: { id: userId },
+    });
   }
 }

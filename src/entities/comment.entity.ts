@@ -39,6 +39,13 @@ export class Comment {
   })
   status!: CommentStatus;
 
+  @ManyToOne(() => Comment, (comment) => comment.children, { nullable: true })
+  @JoinColumn({ name: 'parent_comment_id' })
+  parent!: Comment | null;
+
+  @OneToMany(() => Comment, (comment) => comment.parent)
+  children!: Comment[];
+
   @OneToMany(() => Like, (like) => like.comment)
   likes!: Like[];
 

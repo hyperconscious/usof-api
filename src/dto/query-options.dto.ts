@@ -1,12 +1,14 @@
 import * as Joi from 'joi';
 
+export type SearchType = 'post' | 'user' | 'category' | 'comment';
+
 export interface AuthorFilter {
   id: number;
 }
 
 export interface Filters {
   postId?: number;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'locked';
   postAuthor?: AuthorFilter;
   categoryId?: number;
   categories?: string;
@@ -20,12 +22,12 @@ export interface QueryOptions {
   sortDirection?: 'ASC' | 'DESC';
   filters?: Filters;
   search?: string;
-  isPost?: boolean;
+  searchType?: SearchType;
 }
 
 export const queryOptionsDto = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
+  limit: Joi.number().integer().min(0).max(100).default(10),
   sortField: Joi.string().optional(),
   sortDirection: Joi.string().uppercase().valid('ASC', 'DESC').default('ASC'),
   filters: Joi.object({
@@ -37,5 +39,5 @@ export const queryOptionsDto = Joi.object({
       id: Joi.number().integer().min(1).required(),
     }).optional(),
   }).optional(),
-  search: Joi.string().min(3).optional(),
+  search: Joi.string().min(1).optional(),
 });

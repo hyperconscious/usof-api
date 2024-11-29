@@ -1,10 +1,14 @@
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Favorite } from '../entities/favoutite.entity';
 import { User } from '../entities/user.entity';
 import { Post } from '../entities/post.entity';
 import { AppDataSource } from '../config/orm.config';
 import { BadRequestError, NotFoundError } from '../utils/http-errors';
 import { createFavouriteDto } from '../dto/favourite.dto';
+import { FavouriteController } from '../controllers/favourite.controller';
+import { Paginator, QueryOptions } from '../utils/paginator';
+import { PostController } from '../controllers/post.controller';
+import { postService } from './post.service';
 
 export class FavouriteService {
   private favouriteRepository: Repository<Favorite>;
@@ -32,24 +36,15 @@ export class FavouriteService {
     return favourite;
   }
 
-  async addFavorite(
-    userId: number,
-    favoriteData: Partial<Favorite>,
-  ): Promise<Favorite> {
-    const favourite = this.validateFavouriteDTO(favoriteData);
-    const user = await this.userRepositroy.findOneByOrFail({ id: userId });
-    const post = await this.postRepository.findOneBy({
-      id: favourite.post as unknown as number,
-    });
+  async addFavorite(userId: number, data: any): Promise<Favorite> {
+    const post = await this.postRepository.findOneBy({ id: data.postId });
+    const user = await this.userRepositroy.findOneBy({ id: userId });
 
     if (!user || !post) {
       throw new NotFoundError('User or Post not found');
     }
 
-    const favouriteToSave = this.favouriteRepository.create(favourite);
-    favouriteToSave.user = user;
-    favouriteToSave.post = post;
-
+    const favouriteToSave = this.favouriteRepository.create({ user, post });
     return await this.favouriteRepository.save(favouriteToSave);
   }
 
@@ -65,10 +60,40 @@ export class FavouriteService {
     await this.favouriteRepository.remove(favorite);
   }
 
-  async getFavorites(userId: number): Promise<Favorite[]> {
-    return await this.favouriteRepository.find({
-      where: { user: { id: userId } },
-      relations: ['post'],
+  async getFavorites(
+    userId: number,
+    queryOptions: QueryOptions,
+  ): Promise<{ items: Post[]; total: number }> {
+    const queryBuilder = this.favouriteRepository
+      .createQueryBuilder('favorite')
+      .leftJoinAndSelect('favorite.post', 'post')
+      .leftJoinAndSelect('post.author', 'author')
+      .where('favorite.user_id = :userId', { userId });
+
+    const paginator = new Paginator<Post>(queryOptions);
+    const result = paginator.paginate(queryBuilder);
+    const paginatedResult = (await result) as any;
+    paginatedResult.items = paginatedResult.items.map(
+      (favorite: Favorite) => favorite.post,
+    );
+    return paginatedResult;
+  }
+
+  public async getUserBookmark(
+    userId: number,
+    postId: number,
+  ): Promise<Favorite | null> {
+    const post = await this.postRepository.findOneBy({ id: postId });
+    if (!post) {
+      throw new NotFoundError('Post not found');
+    }
+    const user = await this.userRepositroy.findOneBy({ id: userId });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    return await this.favouriteRepository.findOneBy({
+      post: { id: postId },
+      user: { id: userId },
     });
   }
 }

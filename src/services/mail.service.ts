@@ -4,8 +4,12 @@ import verificationTemplate from '../templates/verificationTemplate';
 import passwordResetTemplate from '../templates/passwordResetTemplate';
 
 export class MailService {
-  public async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `http://${config.host}:${config.port}/api/auth/verify-email?token=${token}`;
+  public async sendVerificationEmail(
+    email: string,
+    token: string,
+    callbackUrl: string,
+  ) {
+    const verificationLink = `${callbackUrl}?token=${token}`;
 
     const transporter = nodemailer.createTransport({
       host: config.mail.host,
@@ -28,8 +32,12 @@ export class MailService {
     await transporter.sendMail(mailOptions);
   }
 
-  public async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `http://${config.host}:${config.port}/api/auth/password-reset?token=${token}`;
+  public async sendPasswordResetEmail(
+    email: string,
+    token: string,
+    callbackUrl: string,
+  ) {
+    const resetLink = `${callbackUrl}?token=${token}`;
 
     const transporter = nodemailer.createTransport({
       host: config.mail.host,

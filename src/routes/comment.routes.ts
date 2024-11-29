@@ -7,6 +7,10 @@ const commentRoutes = Router();
 commentRoutes.get('/:comment_id', CommentController.getCommentById);
 commentRoutes.patch('/:comment_id', auth, CommentController.updateComment);
 commentRoutes.delete('/:comment_id', auth, CommentController.deleteComment);
+commentRoutes.get(
+  '/:comment_id/children',
+  CommentController.getChildrenComments,
+);
 
 commentRoutes.get('/:comment_id/like', CommentController.getLikesByCommentId);
 commentRoutes.get(
@@ -20,6 +24,12 @@ commentRoutes.delete(
   '/:comment_id/dislike',
   auth,
   CommentController.DeleteDislike,
+);
+
+commentRoutes.get(
+  '/:comment_id/user-reaction',
+  auth,
+  CommentController.getUserReaction,
 );
 
 export default commentRoutes;

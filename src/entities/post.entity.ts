@@ -15,6 +15,7 @@ import { IsNotEmpty, Length } from 'class-validator';
 import { Category } from './category.entity';
 import { Like } from './like.entity';
 import { Comment } from './comment.entity';
+import { Favorite } from './favoutite.entity';
 
 export enum PostStatus {
   active = 'active',

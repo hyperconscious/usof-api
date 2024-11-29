@@ -10,8 +10,8 @@ export function auth(req: Request, res: Response, next: NextFunction) {
   }
 
   const jwtService = new JWTService();
-  const decoded = jwtService.verifyAccessToken(token);
-  req.user = decoded;
+  jwtService.verifyAccessToken(token);
+  req.user = jwtService.getUserFromToken(token, 'access');
   next();
 }
 
@@ -33,8 +33,8 @@ export function authorizeUser(req: Request, res: Response, next: NextFunction) {
   if (token) {
     try {
       const jwtService = new JWTService();
-      const decoded = jwtService.verifyAccessToken(token);
-      req.user = decoded;
+      jwtService.verifyAccessToken(token);
+      req.user = jwtService.getUserFromToken(token, 'access');
     } catch (err) {
       req.user = undefined;
     }

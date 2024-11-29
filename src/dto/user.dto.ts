@@ -19,13 +19,12 @@ export const createUserDto = Joi.object({
     }),
 
   full_name: Joi.string()
-    .required()
+    .optional()
     .pattern(
       /^[A-ZА-Я][a-zа-яё]+ [A-ZА-Я][a-zа-яё]+$/,
       'two words with initial uppercase letters',
     )
     .messages({
-      'any.required': 'Full name is required.',
       'string.pattern.name':
         'Full name must consist of two words, each starting with a capital letter.',
     }),

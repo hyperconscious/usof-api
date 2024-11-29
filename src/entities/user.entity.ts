@@ -38,12 +38,24 @@ export class User {
   verified!: boolean;
 
   @Column({ default: '' })
-  avatar!: string;
+  avatar?: string;
 
-  @Column({ default: 0, name: 'publisher_rating' })
+  @Column({
+    type: 'decimal',
+    precision: 2,
+    scale: 1,
+    default: 0,
+    name: 'publisher_rating',
+  })
   publisherRating!: number;
 
-  @Column({ default: 0, name: 'commentator_rating' })
+  @Column({
+    type: 'decimal',
+    precision: 2,
+    scale: 1,
+    default: 0,
+    name: 'commentator_rating',
+  })
   commentatorRating!: number;
 
   @Column({

@@ -21,27 +21,10 @@ export const createPostDto = Joi.object({
     'array.base': 'Images must be an array.',
   }),
   categories: Joi.array()
-    .items(Joi.number().integer())
+    .items(Joi.string().required())
     .required()
-    // categories: Joi.array()
-    //   .items(
-    //     Joi.object({
-    //       id: Joi.number().required().messages({
-    //         'number.base': 'Category ID must be a number.',
-    //         'any.required': 'Category ID is required.',
-    //       }),
-    // title: Joi.string().required().messages({
-    //   'string.base': 'Category title must be a string.',
-    //   'any.required': 'Category title is required.',
-    // }),
-    // description: Joi.string().required().messages({
-    //   'string.base': 'Category description must be a string.',
-    //   'any.required': 'Category description is required.',
-    // }),
-    //   }),
-    // )
+    .unique()
     .min(1)
-    .optional()
     .messages({
       'array.base': 'Categories must be an array.',
       'array.min': 'At least one category is required.',
@@ -87,25 +70,9 @@ export const updatePostDto = Joi.object({
     'array.base': 'Images must be an array.',
   }),
   categories: Joi.array()
-    .items(Joi.number().integer())
+    .items(Joi.string().required())
     .required()
-    // categories: Joi.array()
-    //   .items(
-    //     Joi.object({
-    //       id: Joi.number().required().messages({
-    //         'number.base': 'Category ID must be a number.',
-    //         'any.required': 'Category ID is required.',
-    //       }),
-    // title: Joi.string().required().messages({
-    //   'string.base': 'Category title must be a string.',
-    //   'any.required': 'Category title is required.',
-    // }),
-    // description: Joi.string().required().messages({
-    //   'string.base': 'Category description must be a string.',
-    //   'any.required': 'Category description is required.',
-    // }),
-    //   }),
-    // )
+    .unique()
     .min(1)
     .optional()
     .messages({

@@ -32,7 +32,7 @@ export class CategoryService {
 
   public async getAllCategories(
     queryOptions: QueryOptions,
-  ): Promise<{ data: Category[]; total: number }> {
+  ): Promise<{ items: Category[]; total: number }> {
     const queryBuilder = this.categoryRepository.createQueryBuilder('category');
     const paginator = new Paginator<Category>(queryOptions);
     return await paginator.paginate(queryBuilder);

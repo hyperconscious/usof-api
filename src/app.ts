@@ -2,6 +2,7 @@ import express from 'express';
 import 'reflect-metadata';
 import 'express-async-errors';
 import cors from 'cors';
+import helmet from 'helmet';
 import { startupLogger } from './utils/logger';
 import requestLogger from './middlewares/request-loger.middleware';
 import { router as apiRoutes } from './routes/index.routes';

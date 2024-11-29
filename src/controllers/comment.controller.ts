@@ -4,9 +4,23 @@ import { CommentService } from '../services/comment.service';
 import { postService } from '../services/post.service';
 import { UserRole } from '../entities/user.entity';
 import { BadRequestError, ForbiddenError } from '../utils/http-errors';
+import { QueryOptions } from '../utils/paginator';
+import { queryOptionsDto } from '../dto/query-options.dto';
 
 export class CommentController {
   private static CommentService = new CommentService();
+
+  private static validateQueryDto(req: Request): QueryOptions {
+    const { error, value: queryOptions } = queryOptionsDto.validate(req.query, {
+      abortEarly: false,
+    });
+    if (error) {
+      throw new BadRequestError(
+        error.details.map((detail) => detail.message).join('; '),
+      );
+    }
+    return queryOptions;
+  }
 
   public static async getCommentById(req: Request, res: Response) {
     const commentId = parseInt(req.params.comment_id, 10);
@@ -24,6 +38,19 @@ export class CommentController {
       throw new ForbiddenError('You are not authorized to view this comment.');
     }
     return res.status(StatusCodes.OK).json(comment);
+  }
+
+  public static async getChildrenComments(req: Request, res: Response) {
+    const queryOptions = CommentController.validateQueryDto(req);
+    const commentId = parseInt(req.params.comment_id, 10);
+    if (!commentId) {
+      throw new BadRequestError('Comment Id is required');
+    }
+    const comments = await CommentController.CommentService.getChildrenComments(
+      commentId,
+      queryOptions,
+    );
+    return res.status(StatusCodes.OK).json(comments);
   }
 
   public static async getLikesByCommentId(req: Request, res: Response) {
@@ -173,5 +200,15 @@ export class CommentController {
 
   public static async DeleteDislike(req: Request, res: Response) {
     return CommentController.DeleteLikeDislike(req, res, 'dislike');
+  }
+
+  public static async getUserReaction(req: Request, res: Response) {
+    const commentId = parseInt(req.params.comment_id, 10);
+    const userId = req.user?.id!;
+    const reaction = await CommentController.CommentService.getUserReaction(
+      commentId,
+      userId,
+    );
+    return res.status(StatusCodes.OK).json({ reaction });
   }
 }

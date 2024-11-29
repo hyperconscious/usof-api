@@ -15,7 +15,12 @@ userRouter.post(
 );
 
 userRouter.get('/my-profile', auth, UserController.getUserById);
-userRouter.patch('/avatar', auth, uploadSingle, UserController.uploadAvatar);
+userRouter.patch(
+  '/:user_id/avatar',
+  auth,
+  uploadSingle,
+  UserController.uploadAvatar,
+);
 
 userRouter.get('/:user_id', auth, UserController.getUserById);
 

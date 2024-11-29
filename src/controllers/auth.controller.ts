@@ -2,7 +2,11 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 import { JWTService } from '../services/jwt.service';
 import { StatusCodes } from 'http-status-codes';
-import { BadRequestError, UnauthorizedError } from '../utils/http-errors';
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../utils/http-errors';
 import { MailService } from '../services/mail.service';
 import { User } from '../entities/user.entity';
 
@@ -33,12 +37,12 @@ export class AuthController {
     });
     const accessToken = AuthController.jwtService.generateAccessToken(user);
     const refreshToken = AuthController.jwtService.generateRefreshToken(user);
-    const mailToken = AuthController.jwtService.generateEmailToken(user);
+    // const mailToken = AuthController.jwtService.generateEmailToken(user);
 
-    await AuthController.mailService.sendVerificationEmail(
-      user.email,
-      mailToken,
-    );
+    // await AuthController.mailService.sendVerificationEmail(
+    //   user.email,
+    //   mailToken,
+    // );
 
     return res.status(StatusCodes.CREATED).json({ accessToken, refreshToken });
   }
@@ -83,6 +87,33 @@ export class AuthController {
       .json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
   }
 
+  public static async sendVerificationEmail(req: Request, res: Response) {
+    const { email } = req.body;
+    const callbackUrl = req.headers['x-callback-url'];
+
+    if (!callbackUrl) {
+      throw new BadRequestError('Callback URL is required.');
+    }
+
+    const user = await AuthController.userService.getUserByEmail(email);
+
+    if (!user) {
+      throw new BadRequestError('User with this email does not exist.');
+    }
+
+    const mailToken = AuthController.jwtService.generateEmailToken(user);
+
+    await AuthController.mailService.sendVerificationEmail(
+      email,
+      mailToken,
+      callbackUrl as string,
+    );
+
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: 'Verification email sent successfully.' });
+  }
+
   public static async verifyEmail(req: Request, res: Response) {
     const { token } = req.query;
 
@@ -95,7 +126,7 @@ export class AuthController {
     const user = await AuthController.userService.getUserById(decoded.id);
 
     if (!user || user.verified) {
-      throw new UnauthorizedError('User already verified or does not exist.');
+      throw new NotFoundError('User already verified or does not exist.');
     }
 
     await AuthController.userService.updateUser(user.id, { verified: true });
@@ -107,6 +138,12 @@ export class AuthController {
 
   public static async forgotPassword(req: Request, res: Response) {
     const { email } = req.body;
+    const callbackUrl = req.headers['x-callback-url'];
+
+    if (!callbackUrl) {
+      throw new BadRequestError('Callback URL is required.');
+    }
+
     let user: User;
     try {
       user = await AuthController.userService.getUserByEmail(email);
@@ -116,7 +153,11 @@ export class AuthController {
 
     const mailToken = AuthController.jwtService.generateEmailToken(user);
 
-    await AuthController.mailService.sendPasswordResetEmail(email, mailToken);
+    await AuthController.mailService.sendPasswordResetEmail(
+      email,
+      mailToken,
+      callbackUrl as string,
+    );
 
     return res
       .status(StatusCodes.OK)
@@ -127,6 +168,10 @@ export class AuthController {
     const { token } = req.query;
     const { password, passwordConfirmation } = req.body;
 
+    if (!token) {
+      throw new BadRequestError('Password reset token is missing.');
+    }
+
     if (password && password !== passwordConfirmation) {
       throw new BadRequestError('Password confirmation does not match.');
     }
@@ -136,7 +181,7 @@ export class AuthController {
     const user = await AuthController.userService.getUserById(decoded.id);
 
     if (!user) {
-      throw new UnauthorizedError('User does not exist.');
+      throw new BadRequestError('User does not exist.');
     }
 
     await AuthController.userService.updateUser(user.id, { password });

@@ -1,28 +1,26 @@
 import { Filters, QueryOptions } from '../dto/query-options.dto';
 export class Paginator<T> {
-  private page: number;
-  private limit: number;
-  private sortField: string;
-  private sortDirection: 'ASC' | 'DESC';
-  private filters: Filters;
-  private search: string;
-  private isPost: boolean;
+  private queryOptions: QueryOptions;
 
   constructor(paginationOptions: QueryOptions) {
-    this.page = paginationOptions.page || 1;
-    this.limit = paginationOptions.limit || 10;
-    this.sortField = paginationOptions.sortField || 'id';
-    this.sortDirection = paginationOptions.sortDirection || 'ASC';
-    this.filters = paginationOptions.filters || {};
-    this.search = paginationOptions.search || '';
-    this.isPost = paginationOptions.isPost || false;
+    this.queryOptions = {
+      page: paginationOptions.page || 1,
+      limit: paginationOptions.limit || 10,
+      sortField: paginationOptions.sortField || 'id',
+      sortDirection: paginationOptions.sortDirection || 'ASC',
+      filters: paginationOptions.filters || {},
+      search: paginationOptions.search || '',
+      searchType: paginationOptions.searchType || 'user',
+    };
   }
 
   public async paginate(
     queryBuilder: any,
-  ): Promise<{ data: T[]; total: number }> {
-    Object.keys(this.filters).forEach((filterKey) => {
-      const filterValue = this.filters[filterKey as keyof Filters];
+  ): Promise<{ items: T[]; total: number }> {
+    Object.keys(this.queryOptions.filters || {}).forEach((filterKey) => {
+      const filterValue = (this.queryOptions.filters ?? {})[
+        filterKey as keyof Filters
+      ];
 
       if (filterKey === 'dateRange' && typeof filterValue === 'string') {
         const [startDate, endDate] = filterValue
@@ -39,6 +37,13 @@ export class Paginator<T> {
         const categories = filterValue.split(',');
         queryBuilder.andWhere('category.title IN (:...categories)', {
           categories,
+        });
+      } else if (
+        filterKey === 'status' &&
+        this.queryOptions.searchType === 'comment'
+      ) {
+        queryBuilder.andWhere('comment.status = :status', {
+          status: filterValue,
         });
       } else if (Array.isArray(filterValue)) {
         queryBuilder.andWhere(`${filterKey} IN (:...${filterKey})`, {
@@ -58,33 +63,42 @@ export class Paginator<T> {
       }
     });
 
-    if (this.search) {
-      const searchTerm = this.search.toString();
-      if (this.isPost) {
+    if (this.queryOptions.search) {
+      const searchTerm = this.queryOptions.search.toString();
+      if (this.queryOptions.searchType === 'post') {
+        queryBuilder.andWhere('post.title LIKE :searchTermStart', {
+          searchTerm: `${searchTerm}%`,
+        });
+      } else if (this.queryOptions.searchType === 'user') {
         queryBuilder.andWhere(
-          'post.title LIKE :searchTerm OR post.content LIKE :searchTerm',
+          'user.login LIKE :searchTerm OR user.full_name LIKE :searchTermFull',
           {
-            searchTerm: `%${searchTerm}%`,
+            searchTermFull: `%${searchTerm}%`,
+            searchTerm: `${searchTerm}%`,
           },
         );
-      } else {
-        queryBuilder.andWhere(
-          'user.login LIKE :searchTerm OR user.full_name LIKE :searchTerm',
-          {
-            searchTerm: `%${searchTerm}%`,
-          },
-        );
+      } else if (this.queryOptions.searchType === 'category') {
+        queryBuilder.andWhere('category.title LIKE :searchTerm', {
+          searchTerm: `${searchTerm}%`,
+        });
       }
     }
 
     const total = await queryBuilder.getCount();
-    queryBuilder.orderBy(this.sortField, this.sortDirection);
-    const data = await queryBuilder
-      .limit(this.limit)
-      .offset((this.page - 1) * this.limit)
-      .getMany();
+    queryBuilder.orderBy(
+      this.queryOptions.sortField,
+      this.queryOptions.sortDirection,
+    );
 
-    return { data, total: total };
+    if (this.queryOptions.limit > 0) {
+      queryBuilder
+        .limit(this.queryOptions.limit)
+        .offset((this.queryOptions.page - 1) * this.queryOptions.limit);
+    }
+
+    const items = await queryBuilder.getMany();
+
+    return { items, total: total };
   }
 }
 export { QueryOptions };

@@ -21,6 +21,7 @@ export class CategoryController {
 
   public static async getAllCategories(req: Request, res: Response) {
     const queryOptions = CategoryController.validateQueryDto(req);
+    queryOptions.searchType = 'category';
     const catgegories =
       await CategoryController.categoryService.getAllCategories(queryOptions);
     return res.status(StatusCodes.OK).json(catgegories);
