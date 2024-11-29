@@ -7,15 +7,19 @@ The **USOF API** is a backend system designed to support user-generated content,
 ---
 
 ## Table of Contents
-- [Features](#features)
-- [Database Schema](#database-schema)
-- [Environment Variables](#environment-variables)
-- [Installation and Setup](#installation-and-setup)
-  - [Manual Setup](#manual-setup)
-  - [Docker Setup](#docker-setup)
-- [Available Scripts](#available-scripts)
-- [API Documentation](#api-documentation)
-- [Troubleshooting](#troubleshooting)
+- [USOF API](#usof-api)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Database Schema](#database-schema)
+  - [Environment Variables](#environment-variables)
+  - [Environment Variables](#environment-variables-1)
+  - [Installation and Setup](#installation-and-setup)
+    - [Manual Setup](#manual-setup)
+    - [Docker Setup](#docker-setup)
+  - [Available Scripts](#available-scripts)
+  - [API Documentation](#api-documentation)
+  - [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -109,11 +113,15 @@ To configure the application, copy the `.env.example` file to `.env` in the root
     ```sh
     npm run db:migrate
     ```
-6. Build the project:
+6. Seed the database:
+    ```sh
+    npm run seed
+    ```
+7. Build the project:
     ```sh
     npm run build
     ```
-7. Start the server:
+8. Start the server:
     ```sh
     npm run start
     ```
@@ -147,6 +155,7 @@ To configure the application, copy the `.env.example` file to `.env` in the root
 - `npm run db:revert`: Reverts the last migration.
 - `npm run db:sync`: Synchronizes the database and runs migrations.
 - `npm run format`: Formats the code with Prettier.
+- `npm run seed`: Adding seeds to database.
 
 
 ---
